@@ -40,3 +40,12 @@ Scenario: Cadastro bem-sucedido via formulário
     Then o sistema cria a conta e o perfil único associado
     And envia um link de verificação para o e-mail informado
     And bloqueia o login até que a verificação seja confirmada
+
+Scenario: Redefinição de senha com validação de código de segurança
+    Given que o usuário "Iago" esqueceu sua senha de acesso
+    And ele solicita a recuperação informando o e-mail "iago@teste.com"
+    When o sistema gera um código de segurança e o envia para o e-mail cadastrado
+    And "Iago" insere o código correto e define uma nova senha de "10" caracteres com símbolos e letras
+    Then o sistema deve atualizar a senha no banco de dados e invalidar o código utilizado
+    And exibe a confirmação "Senha alterada com sucesso! Prossiga para o login"
+    And impede que o código de segurança seja reutilizado em uma tentativa futura
