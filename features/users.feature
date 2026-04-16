@@ -39,3 +39,10 @@ Scenario: Erro ao atualizar a perfil
     And seleciono em "Salvar alterações" 
     Then o sistema deve exibir a mensagem "Erro ao atualizar perfil: Já existe alguém com o Nickname 'admin'" 
     And ao acessar minha página pública, todos os usuários devem ver as informações do perfil antes da tentativa de atualização
+
+Scenario: Remoção de usuário
+    Given eu estou logado como "llucasEmanuel"
+    And eu estou na tela "Meu perfil"
+    When eu seleciono "Remover conta"
+    And eu confirmo a escolha com "Confirmo que quero remover a conta"
+    Then o sistema deve mostrar a mensagem "Conta removida com sucesso"
