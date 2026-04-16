@@ -13,3 +13,15 @@ Scenario: Exclusão de conta com deleção em cascata
     Then o sistema apaga permanentemente o perfil, o canal e os vídeos de “Ana Clara”
     And remove o vídeo deletado da lista do usuário “Pedro”
     And encerra a sessão retornando um estado de sucesso
+
+Scenario: Falha na recuperação de conta com e-mail não cadastrado
+    Given que um visitante acessa a tela de recuperação de senha
+    When ele solicita a recuperação inserindo o e-mail "usuario_inexistente@email.com"
+    Then o sistema exibe a mensagem de erro "E-mail não encontrado na nossa base de dados"
+    And não envia nenhum e-mail com link de redefinição de senha
+
+Scenario: Falha ao tentar se inscrever em um canal sem estar logado
+    Given que um visitante está assistindo a um vídeo anonimamente (sem login)
+    When ele clica no botão "Inscrever-se" no canal "Aprenda C++"
+    Then o sistema não registra a inscrição
+    And redireciona o visitante para a tela de login com a mensagem "Faça login para se inscrever neste canal"
