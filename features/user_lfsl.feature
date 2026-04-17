@@ -27,13 +27,14 @@ Scenario: Falha ao tentar se inscrever em um canal sem estar logado
     And redireciona o visitante para a tela de login com a mensagem "Faça login para se inscrever neste canal"
     And oferece a opção de realizar o login simplificado via Google SSO para agilizar a inscrição
     
-Scenario: Criação de perfil adicional para personalização de experiência
+Scenario: Restrição de criação de múltiplos perfis por conta
     Given que o usuário "Ricardo" está autenticado em sua conta principal
-    And sua conta possui atualmente apenas o perfil "Padrão"
-    When ele solicita a criação de um novo perfil chamado "Kids" com a opção de "Conteúdo Seguro" ativada
-    Then o sistema valida os dados e registra o novo perfil vinculado à conta de "Ricardo"
-    And o sistema passa a exibir ambos os perfis na tela de seleção de usuário ao iniciar a sessão
-    And o histórico de vídeos assistidos do perfil "Kids" é iniciado de forma independente do perfil "Padrão"
+    And sua conta já possui um único perfil chamado "Padrão"
+    When ele solicita a criação de um novo perfil chamado "Kids"
+    Then o sistema rejeita a solicitação informando que apenas um perfil é permitido por conta
+    And o sistema mantém apenas o perfil "Padrão" vinculado à conta de "Ricardo"
+    And nenhuma nova configuração de perfil é registrada no sistema
+
 
 Scenario: Cadastro bem-sucedido via formulário
     Given que o visitante está na página de registro
@@ -43,10 +44,10 @@ Scenario: Cadastro bem-sucedido via formulário
     And bloqueia o login até que a verificação seja confirmada
 
 Scenario: Redefinição de senha com validação de código de segurança
-    Given que o usuário "Iago" esqueceu sua senha de acesso
-    And ele solicita a recuperação informando o e-mail "iago@teste.com"
+    Given que o usuário "Artur" esqueceu sua senha de acesso
+    And ele solicita a recuperação informando o e-mail "Artur@teste.com"
     When o sistema gera um código de segurança e o envia para o e-mail cadastrado
-    And "Iago" insere o código correto e define uma nova senha de "10" caracteres com símbolos e letras
+    And "Artur" insere o código correto e define uma nova senha de "10" caracteres com símbolos e letras
     Then o sistema deve atualizar a senha no banco de dados e invalidar o código utilizado
     And exibe a confirmação "Senha alterada com sucesso! Prossiga para o login"
     And impede que o código de segurança seja reutilizado em uma tentativa futura
