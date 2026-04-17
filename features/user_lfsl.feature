@@ -39,7 +39,7 @@ Scenario: Restrição de criação de múltiplos perfis por conta
 
 Scenario: Cadastro bem-sucedido via formulário
     Given que o visitante está na página de registro
-    When ele preenche o nome "Iago", o e-mail "iago@teste.com" e uma senha de "8" caracteres com símbolos e maiúsculas
+    When ele preenche o nome "Iago", o e-mail "iago@teste.com" e uma senha de "10" caracteres com símbolos e maiúsculas
     Then o sistema cria a conta e o perfil único associado
     And envia um link de verificação para o e-mail informado
     And bloqueia o login até que a verificação seja confirmada
