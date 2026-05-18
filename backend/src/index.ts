@@ -1,3 +1,4 @@
+import "dotenv/config";
 import express, { Request, Response } from 'express';
 import userRoutes from './routes'; 
 import { router as movieRoutes } from './routes/movie-routes';
@@ -5,11 +6,15 @@ import { router as movieRoutes } from './routes/movie-routes';
 const app = express();
 app.use(express.json());
 
+// Registrando as rotas
 app.use(userRoutes);
+
+// Todas as rotas de filmes
 app.use("/", movieRoutes);
 
+// Rota principal de verificação da API
 app.get('/', (req: Request, res: Response) => {
-  res.json({ mensagem: "API funcionando!" });
+  res.json({ message: "Movie Streaming API is running" });
 });
 
 app.listen(3000, () => {
