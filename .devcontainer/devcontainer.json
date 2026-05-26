@@ -11,16 +11,10 @@
         "esbenp.prettier-vscode",
         "firsttris.vscode-jest-runner",
         "ms-azuretools.vscode-docker",
-        "ckotzb.postgresql-client",
-        "alexkrechik.cucumberautocomplete"
+        "ckotzb.postgresql-client" // Sugestão: extensão para explorar o banco
       ],
       "settings": {
-        "editor.defaultFormatter": "esbenp.prettier-vscode",
-        "cucumberautocomplete.steps": [
-          "backend/tests/step_definitions/*.ts"
-        ],
-        "cucumberautocomplete.syncfeatures": "features/*.feature",
-        "cucumberautocomplete.strictGherkinCompletion": true
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
       }
     }
   },
