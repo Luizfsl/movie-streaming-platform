@@ -1,3 +1,4 @@
+@test-delete
 Feature: Exclusão de Conta de Usuário
   Como um usuário cadastrado na plataforma de streaming
   Quero poder excluir minha conta permanentemente
