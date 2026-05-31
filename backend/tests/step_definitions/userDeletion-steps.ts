@@ -83,6 +83,11 @@ Then('a conta do usuário {string} deve continuar ativa no sistema', async funct
     assert.notStrictEqual(userInDb, null, "O usuário deveria continuar no banco, mas não foi encontrado.");
 });
 
+Then('a conta do usuário deve continuar ativa no sistema', async function () {
+    const userInDb = await prisma.user.findFirst({ where: { email: "Luiz@teste.com" } });
+    assert.notStrictEqual(userInDb, null, "O usuário deveria continuar no banco, mas não foi encontrado.");
+});
+
 Given('que o usuário está autenticado no sistema web', function () { return 'pending'; });
 Given('que o usuário está na página de {string}', function (string) { return 'pending'; });
 When('o usuário clica no botão {string}', function (string) { return 'pending'; });

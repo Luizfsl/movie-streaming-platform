@@ -13,7 +13,8 @@
     "test:e2e": "node --import tsx --test src/**/*.e2e.spec.ts",
     "test:cucumber": "cucumber-js ../features/userSignUp.feature ../features/recommendation.feature --require-module ts-node/register --require tests/step_definitions/**/*.ts",
     "test:cucumber:lessl": "cucumber-js -p lessl --tags '@player or @metadata'",
-    "test:delete": "NODE_ENV=test cucumber-js --require-module ts-node/register --require tests/step_definitions/**/*.ts --tags @test-delete"
+    "test:delete": "NODE_ENV=test cucumber-js --require-module ts-node/register --require tests/step_definitions/**/*.ts --tags @test-delete",
+    "test:gui": "NODE_ENV=test cucumber-js --require-module ts-node/register --require tests/step_definitions/**/*.ts --tags \"@gui\""
   },
   "keywords": [],
   "author": "",
