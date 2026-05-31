@@ -15,6 +15,9 @@
     "test:cucumber:lessl": "cucumber-js -p lessl --tags '@player or @metadata'",
     "test:delete": "NODE_ENV=test cucumber-js --require-module ts-node/register --require tests/step_definitions/**/*.ts --tags @test-delete",
     "test:gui": "NODE_ENV=test cucumber-js --require-module ts-node/register --require tests/step_definitions/**/*.ts --tags \"@gui\""
+    "test:cucumber": "cucumber-js",
+    "test:cucumber:lessl": "cucumber-js -p lessl --tags '@player or @metadata'",
+    "test:cucumber:implemented": "cucumber-js -p implemented"  
   },
   "keywords": [],
   "author": "",

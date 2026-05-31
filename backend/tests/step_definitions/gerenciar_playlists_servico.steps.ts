@@ -1,7 +1,7 @@
 import { After, AfterAll, Before, Given, Then, When } from "@cucumber/cucumber";
 import { strict as assert } from "assert";
 
-import { prisma } from "../../../backend/src/database/prisma";
+import { prisma } from "../../src/database/prisma";
 
 import {
   addMovieToPlaylistService,
@@ -10,9 +10,9 @@ import {
   getPlaylistsByUserIdService,
   removeMovieFromPlaylistService,
   updatePlaylistService,
-} from "../../../backend/src/services/playlist-service";
+} from "../../src/services/playlist-service";
 
-import type { PlaylistModel } from "../../../backend/src/models/playlist-model";
+import type { PlaylistModel } from "../../src/models/playlist-model";
 
 let currentUserId = "";
 let result: PlaylistModel[] | PlaylistModel | null = null;
