@@ -11,8 +11,9 @@
     "test:unit": "node --import tsx --test src/**/*.spec.ts",
     "test:integration": "node --import tsx --test src/**/*.integration.spec.ts",
     "test:e2e": "node --import tsx --test src/**/*.e2e.spec.ts",
-    "test:cucumber": "cucumber-js ../features/userSignUp.feature ../features/recommendation.feature --require-module ts-node/register --require tests/step_definitions/**/*.ts",
-    "test:cucumber:lessl": "cucumber-js -p lessl --tags '@player or @metadata'"  
+    "test:cucumber": "cucumber-js",
+    "test:cucumber:lessl": "cucumber-js -p lessl --tags '@player or @metadata'",
+    "test:cucumber:implemented": "cucumber-js -p implemented"  
   },
   "keywords": [],
   "author": "",

@@ -1,4 +1,4 @@
-# Feature: Gerenciar filmes nas minhas playlists
+Feature: Gerenciar filmes nas minhas playlists
 
 As a usuário da plataforma
 I want adicionar e remover filmes das minhas playlists
