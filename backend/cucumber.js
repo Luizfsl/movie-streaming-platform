@@ -21,6 +21,14 @@ module.exports = {
     publishQuiet: true
   },
 
+  login: {
+    paths: ["../features/user_login_service.feature"],
+    require: ["tests/step_definitions/userLogin.steps.ts"],
+    requireModule: ["ts-node/register"],
+    format: ["summary", "progress-bar"],
+    publishQuiet: true,
+  },
+
   implemented: {
     paths: [
       '../features/MovieMetadata.feature',
