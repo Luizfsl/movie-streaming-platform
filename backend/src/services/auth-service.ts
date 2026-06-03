@@ -5,7 +5,13 @@ import { findUserById, deleteUser } from '../repositories/user-repository';
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID || "mock_client_id");
 
-export const registerUser = async (data: any) => {
+interface GoogleUserData {
+    email: string;
+    name: string;
+    googleId: string;
+}
+
+function validateRegistrationData(data: any): void {
     const { name, email, password } = data;
 
     // 1. Garantir que os dados são strings puras
@@ -33,18 +39,68 @@ export const registerUser = async (data: any) => {
     if (password.length > 72) {
         throw { status: 400, message: "tamanho de senha excede o limite permitido" };
     }
+}
 
-    // 6. Verificar se o e-mail já existe 
+async function hashPassword(password: string): Promise<string> {
+    const salt = await bcrypt.genSalt(10);
+    return bcrypt.hash(password, salt);
+}
+
+async function verifyGoogleToken(token: string, bodyMockData: any): Promise<GoogleUserData> {
+    if (token === "TEST_TIMEOUT_TOKEN") {
+        throw { status: 500, message: "Erro ao autenticar com o Google" };
+    } 
+    if (token === "TOKEN_FORJADO_INVALIDO") {
+        throw { status: 400, message: "Token do Google inválido" };
+    }
+
+    if (token === "TEST_VALID_TOKEN") {
+        return {
+            email: bodyMockData.mockEmail || "exemplo@test.com",
+            name: bodyMockData.mockName || "Usuário Teste",
+            googleId: "123456789"
+        };
+    }
+
+    try {
+        const ticket = await googleClient.verifyIdToken({
+            idToken: token,
+            audience: process.env.GOOGLE_CLIENT_ID,
+        });
+        const payload = ticket.getPayload();
+        
+        if (!payload || !payload.email) {
+            throw { status: 400, message: "Token do Google inválido" };
+        }
+        
+        return {
+            email: payload.email,
+            name: payload.name || "Usuário Google",
+            googleId: payload.sub,
+        };
+    } catch (error: any) {
+        if (error.message && (error.message.includes('Token used too late') || error.message.includes('Wrong number of segments') || error.message.includes('Invalid token'))) {
+            throw { status: 400, message: "Token do Google inválido" };
+        }
+        throw { status: 500, message: "Erro ao autenticar com o Google" };
+    }
+}
+
+
+export const registerUser = async (data: any) => {
+    // Extraído: Toda a validação massiva de inputs
+    validateRegistrationData(data);
+
+    const { name, email, password } = data;
+
     const userExists = await userRepository.findUserByEmail(email);
     if (userExists) {
         throw { status: 400, message: "conta já está vinculada" };
     }
 
-    // 7. Criptografar a senha
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
+    // Extraído: Lógica de criptografia
+    const hashedPassword = await hashPassword(password);
 
-    // 8. Salvar no banco
     const newUser = await userRepository.createUser({
         name,
         email,
@@ -55,43 +111,8 @@ export const registerUser = async (data: any) => {
 };
 
 export const authenticateGoogleUser = async (token: string, bodyMockData: any) => {
-    if (token === "TEST_TIMEOUT_TOKEN") {
-        throw { status: 500, message: "Erro ao autenticar com o Google" };
-    } 
-    if (token === "TOKEN_FORJADO_INVALIDO") {
-        throw { status: 400, message: "Token do Google inválido" };
-    }
-
-    let email = "";
-    let name = "";
-    let googleId = "";
-
-    if (token === "TEST_VALID_TOKEN") {
-        email = bodyMockData.mockEmail || "exemplo@test.com";
-        name = bodyMockData.mockName || "Usuário Teste";
-        googleId = "123456789";
-    } else {
-        try {
-            const ticket = await googleClient.verifyIdToken({
-                idToken: token,
-                audience: process.env.GOOGLE_CLIENT_ID,
-            });
-            const payload = ticket.getPayload();
-            
-            if (!payload || !payload.email) {
-                throw { status: 400, message: "Token do Google inválido" };
-            }
-            
-            email = payload.email;
-            name = payload.name || "Usuário Google";
-            googleId = payload.sub;
-        } catch (error: any) {
-            if (error.message && (error.message.includes('Token used too late') || error.message.includes('Wrong number of segments') || error.message.includes('Invalid token'))) {
-                throw { status: 400, message: "Token do Google inválido" };
-            }
-            throw { status: 500, message: "Erro ao autenticar com o Google" };
-        }
-    }
+    // Extraído: Toda a complexidade de validação e blocos try/catch do Google
+    const { email, name, googleId } = await verifyGoogleToken(token, bodyMockData);
 
     let user = await userRepository.findUserByEmail(email);
 
