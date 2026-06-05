@@ -1,9 +1,15 @@
 import api from './api';
 
-// Função responsável por enviar os dados do frontend para a rota de registro no backend
-export const registerUser = async (userData: any) => {
+// 1. Criamos a tipagem exata dos dados que o seu formulário vai enviar
+export interface RegisterData {
+    name: string;
+    email: string;
+    password?: string; // Coloquei o '?' caso a senha seja opcional, remova o '?' se for obrigatória
+}
+
+// 2. Trocamos o (userData: any) por (userData: RegisterData)
+export const registerUser = async (userData: RegisterData) => {
     try {
-        // Envia um POST para http://localhost:3000/register
         const response = await api.post('/register', userData);
         return response.data;
     } catch (error) {
