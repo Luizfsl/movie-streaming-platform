@@ -1,4 +1,5 @@
 import "dotenv/config";
+import cors from 'cors'
 import express, { Request, Response } from "express";
 import { recommendationRoutes } from "./routes/recommendation-routes";
 import userRoutes from "./routes/routes";
@@ -6,6 +7,7 @@ import { router as movieRoutes } from "./routes/movie-routes";
 import { router as playlistRouter } from "./routes/playlist-route";
 
 const app = express();
+app.use(cors())
 
 // Middleware para aceitar JSON no body das requisições
 app.use(express.json());

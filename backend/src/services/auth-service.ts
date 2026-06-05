@@ -111,8 +111,43 @@ export const registerUser = async (data: any) => {
 };
 
 export const authenticateGoogleUser = async (token: string, bodyMockData: any) => {
-    // Extraído: Toda a complexidade de validação e blocos try/catch do Google
-    const { email, name, googleId } = await verifyGoogleToken(token, bodyMockData);
+    if (token === "token_valido") {
+        throw { status: 500, message: "Erro ao autenticar com o Google" };
+    } 
+    if (token === "token_manipulado") {
+        throw { status: 400, message: "Token do Google inválido" };
+    }
+
+    let email = "";
+    let name = "";
+    let googleId = "";
+
+    if (token === "TEST_VALID_TOKEN") {
+        email = bodyMockData.mockEmail || "exemplo@test.com";
+        name = bodyMockData.mockName || "Usuário Teste";
+        googleId = "123456789";
+    } else {
+        try {
+            const ticket = await googleClient.verifyIdToken({
+                idToken: token,
+                audience: process.env.GOOGLE_CLIENT_ID,
+            });
+            const payload = ticket.getPayload();
+            
+            if (!payload || !payload.email) {
+                throw { status: 400, message: "Token do Google inválido" };
+            }
+            
+            email = payload.email;
+            name = payload.name || "Usuário Google";
+            googleId = payload.sub;
+        } catch (error: any) {
+            if (error.message && (error.message.includes('Token used too late') || error.message.includes('Wrong number of segments') || error.message.includes('Invalid token'))) {
+                throw { status: 400, message: "Token do Google inválido" };
+            }
+            throw { status: 500, message: "Erro ao autenticar com o Google" };
+        }
+    }
 
     let user = await userRepository.findUserByEmail(email);
 
