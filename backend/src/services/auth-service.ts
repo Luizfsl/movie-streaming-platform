@@ -46,46 +46,6 @@ async function hashPassword(password: string): Promise<string> {
     return bcrypt.hash(password, salt);
 }
 
-async function verifyGoogleToken(token: string, bodyMockData: any): Promise<GoogleUserData> {
-    if (token === "TEST_TIMEOUT_TOKEN") {
-        throw { status: 500, message: "Erro ao autenticar com o Google" };
-    } 
-    if (token === "TOKEN_FORJADO_INVALIDO") {
-        throw { status: 400, message: "Token do Google inválido" };
-    }
-
-    if (token === "TEST_VALID_TOKEN") {
-        return {
-            email: bodyMockData.mockEmail || "exemplo@test.com",
-            name: bodyMockData.mockName || "Usuário Teste",
-            googleId: "123456789"
-        };
-    }
-
-    try {
-        const ticket = await googleClient.verifyIdToken({
-            idToken: token,
-            audience: process.env.GOOGLE_CLIENT_ID,
-        });
-        const payload = ticket.getPayload();
-        
-        if (!payload || !payload.email) {
-            throw { status: 400, message: "Token do Google inválido" };
-        }
-        
-        return {
-            email: payload.email,
-            name: payload.name || "Usuário Google",
-            googleId: payload.sub,
-        };
-    } catch (error: any) {
-        if (error.message && (error.message.includes('Token used too late') || error.message.includes('Wrong number of segments') || error.message.includes('Invalid token'))) {
-            throw { status: 400, message: "Token do Google inválido" };
-        }
-        throw { status: 500, message: "Erro ao autenticar com o Google" };
-    }
-}
-
 
 export const registerUser = async (data: any) => {
     // Extraído: Toda a validação massiva de inputs
@@ -111,6 +71,7 @@ export const registerUser = async (data: any) => {
         name,
         email,
         password: hashedPassword,
+        role:role
     });
 
     return newUser;
