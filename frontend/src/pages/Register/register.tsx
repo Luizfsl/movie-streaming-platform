@@ -1,55 +1,102 @@
 import React, { useState } from 'react';
-import { registerUser } from '../../services/authService';
+import { Input } from '../../components/input/input'; 
+import { LuUser, LuAtSign, LuLock, LuShieldCheck, LuArrowRight } from 'react-icons/lu';
+import { FcGoogle } from 'react-icons/fc'; // Ícone colorido do Google
+import './register.css'; // Vamos criar este arquivo abaixo
 
-export default function Register() {
-    // Variáveis para guardar o que o usuário digita
-    const [name, setName] = useState('');
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [mensagem, setMensagem] = useState('');
+export const Register = () => {
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    agreeTerms: false
+  });
 
-    // Função que roda quando o botão "Cadastrar" é clicado
-    const handleCadastro = async (e: React.FormEvent) => {
-        e.preventDefault(); // Evita que a página recarregue
+  return (
+    <div className="register-page-container">
+      <div className="register-card">
         
-        try {
-            // Chama a função do authService enviando os dados digitados
-            await registerUser({ name, email, password });
-            setMensagem('Conta criada com sucesso! Você já pode fazer login.');
-            
-            // Limpa os campos após o sucesso
-            setName('');
-            setEmail('');
-            setPassword('');
-        } catch (error) {
-            setMensagem('Erro ao criar conta. Verifique os dados e tente novamente.');
-        }
-    };
-
-    return (
-        <div style={{ maxWidth: '400px', margin: '50px auto', fontFamily: 'sans-serif' }}>
-            <h2>Criar nova conta</h2>
-            
-            <form onSubmit={handleCadastro} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                <div>
-                    <label>Nome:</label><br />
-                    <input type="text" value={name} onChange={(e) => setName(e.target.value)} required style={{ width: '100%' }} />
-                </div>
-                <div>
-                    <label>Email:</label><br />
-                    <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required style={{ width: '100%' }} />
-                </div>
-                <div>
-                    <label>Senha:</label><br />
-                    <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required style={{ width: '100%' }} />
-                </div>
-                
-                <button type="submit" style={{ padding: '10px', cursor: 'pointer' }}>
-                    Cadastrar
-                </button>
-            </form>
-
-            {mensagem && <p style={{ marginTop: '20px', fontWeight: 'bold' }}>{mensagem}</p>}
+        {/* LOGO AREA */}
+        <div className="logo-section">
+          {/* Substitua pelo caminho real da sua imagem de logo */}
+          <img src="/path-to-your-logo.png" alt="Clnema Filmes Antigos" className="main-logo" />
         </div>
-    );
-}
+
+        {/* HEADER */}
+        <div className="header-section">
+          <h1 className="register-title">Create your account</h1>
+          <p className="register-subtitle">Begin your journey into the cinematic collective.</p>
+        </div>
+
+        {/* FORM */}
+        <form className="register-form">
+          
+          <Input 
+            label="Full Name"
+            placeholder="Enter your name"
+            icon={<LuUser />} // Passamos o ícone como propriedade
+            value={formData.name}
+            onChange={(e) => setFormData({...formData, name: e.target.value})}
+          />
+
+          <Input 
+            label="Email Address"
+            type="email"
+            placeholder="name@example.com"
+            icon={<LuAtSign />}
+            value={formData.email}
+            onChange={(e) => setFormData({...formData, email: e.target.value})}
+          />
+
+          <div className="form-row-password">
+            <Input 
+              label="Password"
+              type="password"
+              placeholder="........"
+              icon={<LuLock />}
+              value={formData.password}
+              onChange={(e) => setFormData({...formData, password: e.target.value})}
+            />
+            <Input 
+              label="Confirm"
+              type="password"
+              placeholder="........"
+              icon={<LuShieldCheck />}
+              value={formData.confirmPassword}
+              onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
+            />
+          </div>
+
+          {/* CHECKBOX */}
+          <div className="checkbox-section">
+            <input type="checkbox" id="agreeTerms" />
+            <label htmlFor="agreeTerms">
+              I agree to the <span className="gold-link">Terms of Discovery</span> and the <span className="gold-link">Archive Privacy Policy</span>.
+            </label>
+          </div>
+
+          {/* MAIN CTA BUTTON */}
+          <button type="submit" className="btn-primary-gold">
+            CREATE ACCOUNT <LuArrowRight className="btn-icon-right" />
+          </button>
+        </form>
+
+        {/* DIVIDER */}
+        <div className="divider-section">
+          <span className="divider-text">OR CONTINUE WITH</span>
+        </div>
+
+        {/* GOOGLE BUTTON */}
+        <button type="button" className="btn-google">
+          <FcGoogle className="btn-icon-google" /> Sign up with Google
+        </button>
+
+        {/* FOOTER LINK */}
+        <div className="footer-section">
+          Already a member? <span className="gold-link">Log in here</span>
+        </div>
+      </div>
+    </div>
+  );
+};
