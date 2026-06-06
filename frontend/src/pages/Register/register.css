@@ -51,13 +51,18 @@
   width: 100%;
 }
 
-/* Linha das senhas lado a lado */
+/* Container que alinha os dois campos lado a lado */
 .form-row-password {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  display: flex;
+  gap: 16px; /* Espaço entre as duas caixas */
+  width: 100%;
 }
 
+/* Força ambos os campos (Password e Confirm) a terem exatamente o mesmo tamanho */
+.form-row-password > * {
+  flex: 1;
+  min-width: 0; /* Truque de ouro do CSS: impede que o input estique além do limite */
+}
 /* Checkbox */
 .checkbox-section {
   display: flex;

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import cinemaLogo from "../../assets/cinema_logo.png";
 import { MovieCard } from "../../components/MovieCard";
+import { Header } from "../../components/Header"; // Certifique-se de criar este componente em src/components/Header.tsx
 import { getMovies } from "../../services/movieApi";
 import {
   addMovieToPlaylist,
@@ -12,9 +12,12 @@ import "./HomePage.css";
 interface HomePageProps {
   userId: string;
   onGoToPlaylists: () => void;
+  onGoToHome?: () => void;
+  onGoToHistory: () => void;
+  onSelectMovie: (movie: Movie) => void;
 }
 
-export function HomePage({ userId, onGoToPlaylists }: HomePageProps) {
+export function HomePage({ userId, onGoToPlaylists, onGoToHome, onGoToHistory, onSelectMovie }: HomePageProps) {
   const [movies, setMovies] = useState<Movie[]>([]);
   const [loadingMovies, setLoadingMovies] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -24,9 +27,7 @@ export function HomePage({ userId, onGoToPlaylists }: HomePageProps) {
   const [isPlaylistModalOpen, setIsPlaylistModalOpen] = useState(false);
   const [isLoadingPlaylists, setIsLoadingPlaylists] = useState(false);
 
-  const [playlistMessage, setPlaylistMessage] = useState<PageMessage | null>(
-    null,
-  );
+  const [playlistMessage, setPlaylistMessage] = useState<PageMessage | null>(null);
 
   useEffect(() => {
     async function loadMovies() {
@@ -118,30 +119,23 @@ export function HomePage({ userId, onGoToPlaylists }: HomePageProps) {
 
   return (
     <div className="home-page">
-      <header className="home-header">
-        <img src={cinemaLogo} width="300" alt="Cinema" />
-
-        <nav className="home-nav">
-          <button className="home-nav-button active" type="button">
-            Página Principal
-          </button>
-
-          <button
-            className="home-nav-button"
-            type="button"
-            onClick={onGoToPlaylists}
-          >
-            Minhas Playlists
-          </button>
-        </nav>
-      </header>
+      {/* HEADER COMPONENTIZADO RECEBENDO AS AÇÕES DA PÁGINA */}
+      <Header 
+        activePage="home" 
+        onGoToHome={onGoToHome}
+        onGoToPlaylists={onGoToPlaylists}
+        onLogout={() => {
+          console.log("Usuário deslogado");
+        }}
+        onGoToHistory={onGoToHistory}
+      />
 
       <main className="home-content">
         <section className="home-hero">
           <p className="home-eyebrow">Catálogo</p>
           <h1>Página Principal</h1>
           <p>
-            Explore o catálogo de filmes e organize seus favoritos em playlists.
+            Explore o catálogo de filmes e organize seus favoritos in playlists.
           </p>
         </section>
 
@@ -169,6 +163,7 @@ export function HomePage({ userId, onGoToPlaylists }: HomePageProps) {
               key={movie.id}
               movie={movie}
               onAddToPlaylist={openAddMovieToPlaylistModal}
+              onSelectMovie={onSelectMovie}
             />
           ))}
         </div>

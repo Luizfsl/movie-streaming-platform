@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Input } from '../../components/input/input'; 
 import { LuUser, LuAtSign, LuLock, LuShieldCheck, LuArrowRight } from 'react-icons/lu';
-import { FcGoogle } from 'react-icons/fc'; // Ícone colorido do Google
-import './register.css'; // Vamos criar este arquivo abaixo
+import { FcGoogle } from 'react-icons/fc'; 
+import './register.css'; 
 
 export const Register = () => {
   const [formData, setFormData] = useState({
@@ -17,10 +17,10 @@ export const Register = () => {
     <div className="register-page-container">
       <div className="register-card">
         
-        {/* LOGO AREA */}
+        {/* LOGO AREA - Agora com a imagem inserida */}
         <div className="logo-section">
-          {/* Substitua pelo caminho real da sua imagem de logo */}
-          <img src="/path-to-your-logo.png" alt="Clnema Filmes Antigos" className="main-logo" />
+          {/* Certifique-se de salvar o arquivo 'logo-cinema.png' na pasta 'public' */}
+          <img src="/logo.png" alt="Clnema Filmes Antigos" className="main-logo" />
         </div>
 
         {/* HEADER */}
@@ -35,7 +35,7 @@ export const Register = () => {
           <Input 
             label="Full Name"
             placeholder="Enter your name"
-            icon={<LuUser />} // Passamos o ícone como propriedade
+            icon={<LuUser />} 
             value={formData.name}
             onChange={(e) => setFormData({...formData, name: e.target.value})}
           />
@@ -67,15 +67,7 @@ export const Register = () => {
               onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
             />
           </div>
-
-          {/* CHECKBOX */}
-          <div className="checkbox-section">
-            <input type="checkbox" id="agreeTerms" />
-            <label htmlFor="agreeTerms">
-              I agree to the <span className="gold-link">Terms of Discovery</span> and the <span className="gold-link">Archive Privacy Policy</span>.
-            </label>
-          </div>
-
+          
           {/* MAIN CTA BUTTON */}
           <button type="submit" className="btn-primary-gold">
             CREATE ACCOUNT <LuArrowRight className="btn-icon-right" />
