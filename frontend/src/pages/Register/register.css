@@ -1,164 +1,190 @@
-/* Layout centralizado da página */
+/* CONTEXTO GERAL E CENTRALIZAÇÃO */
 .register-page-container {
   display: flex;
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background-color: #0F0F0F; /* Fundo quase preto da página inteira */
-  color: #ffffff;
+  background-color: #0f0f0f; /* Fundo escuro de cinema */
   padding: 20px;
+  font-family: 'Inter', system-ui, sans-serif;
 }
 
-/* O Cartão centralizado */
+/* O CARTÃO DE CADASTRO */
 .register-card {
-  background-color: #121212; /* Fundo do cartão ligeiramente mais claro */
-  border-radius: 16px;
+  background-color: #141414; /* Fundo do cartão ligeiramente mais claro */
+  border: 1px solid #222;
+  border-radius: 12px;
   padding: 40px;
   width: 100%;
-  max-width: 460px; /* Largura controlada */
-  box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+  max-width: 480px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
   display: flex;
   flex-direction: column;
-  align-items: center;
 }
 
-/* Logo */
+/* SEÇÃO DA LOGO */
 .logo-section {
+  display: flex;
+  justify-content: center;
   margin-bottom: 24px;
 }
+
 .main-logo {
-  height: 80px; /* Ajuste conforme necessário */
+  height: 90px;
+  object-fit: contain;
 }
 
-/* Header */
+/* CABEÇALHO (TÍTULOS) */
 .header-section {
   text-align: center;
   margin-bottom: 32px;
 }
+
 .register-title {
-  font-size: 1.75rem;
-  font-weight: 600;
-  color: #FBBF24; /* Título em amarelo-ouro */
-  margin-bottom: 8px;
+  color: #FBBF24; /* Tom dourado oficial */
+  font-size: 28px;
+  font-weight: 700;
+  margin: 0 0 8px 0;
 }
+
 .register-subtitle {
-  font-size: 0.875rem;
-  color: #A1A1AA;
+  color: #888888;
+  font-size: 14px;
+  margin: 0;
 }
 
-/* Form */
+/* FORMULÁRIO E INPUTS */
 .register-form {
-  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 20px; /* Espaçamento vertical perfeito entre os inputs */
 }
 
-/* Container que alinha os dois campos lado a lado */
+/* LINHA DAS SENHAS (O FIX DE ALINHAMENTO) */
 .form-row-password {
   display: flex;
-  gap: 16px; /* Espaço entre as duas caixas */
+  gap: 16px;
   width: 100%;
 }
 
-/* Força ambos os campos (Password e Confirm) a terem exatamente o mesmo tamanho */
 .form-row-password > * {
   flex: 1;
-  min-width: 0; /* Truque de ouro do CSS: impede que o input estique além do limite */
-}
-/* Checkbox */
-.checkbox-section {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  margin-bottom: 24px;
-  font-size: 0.75rem;
-  color: #A1A1AA;
-}
-.checkbox-section input {
-  margin-top: 2px;
+  min-width: 0; /* Impede que o input quebre para fora do cartão */
 }
 
-/* Links em Dourado */
-.gold-link {
-  color: #FBBF24;
-  cursor: pointer;
-  font-weight: 500;
-}
-.gold-link:hover {
-  text-decoration: underline;
-}
-
-/* BOTÃO PRINCIPAL DOURADO */
+/* BOTÃO PRINCIPAL (DOURADO) */
 .btn-primary-gold {
-  width: 100%;
-  background-color: #FBBF24; /* Amarelo-ouro */
-  color: #000000; /* Texto preto para contraste */
-  border: none;
-  border-radius: 8px;
-  padding: 14px;
-  font-size: 0.875rem;
+  background-color: #FBBF24;
+  color: #000000;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  font-size: 14px;
+  letter-spacing: 0.5px;
+  border: none;
+  border-radius: 6px;
+  padding: 14px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   transition: background-color 0.2s ease;
-  margin-bottom: 24px;
-}
-.btn-primary-gold:hover {
-  background-color: #F59E0B; /* Dourado um pouco mais escuro no hover */
-}
-.btn-icon-right {
-  font-size: 1.1rem;
+  margin-top: 10px;
 }
 
-/* Divisor "OR CONTINUE WITH" */
+.btn-primary-gold:hover {
+  background-color: #F59E0B;
+}
+
+.btn-icon-right {
+  font-size: 16px;
+}
+
+/* DIVISOR (OR CONTINUE WITH) */
 .divider-section {
-  width: 100%;
   display: flex;
   align-items: center;
   text-align: center;
-  margin-bottom: 24px;
-}
-.divider-section::before, .divider-section::after {
-  content: '';
-  flex: 1;
-  border-bottom: 1px solid #2A2A2A;
-}
-.divider-text {
-  padding: 0 16px;
-  font-size: 0.65rem;
-  color: #52525B;
-  font-weight: 600;
+  margin: 24px 0;
+  color: #444;
 }
 
-/* BOTÃO GOOGLE */
+.divider-section::before,
+.divider-section::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid #222;
+}
+
+.divider-text {
+  padding: 0 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #666;
+  letter-spacing: 1px;
+}
+
+/* BOTÃO DO GOOGLE */
 .btn-google {
-  width: 100%;
   background-color: transparent;
   color: #ffffff;
-  border: 1px solid #2A2A2A; /* Borda sutil */
-  border-radius: 8px;
+  border: 1px solid #333333;
+  border-radius: 6px;
   padding: 12px;
-  font-size: 0.875rem;
+  font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: 10px;
   transition: background-color 0.2s ease;
-  margin-bottom: 32px;
-}
-.btn-google:hover {
-  background-color: #1A1A1A;
-}
-.btn-icon-google {
-  font-size: 1.3rem;
 }
 
-/* Footer Link */
+.btn-google:hover {
+  background-color: #1f1f1f;
+  border-color: #444;
+}
+
+.btn-icon-google {
+  font-size: 18px;
+}
+
+/* LINKS E TEXTOS EM DOURADO */
+.gold-link {
+  color: #FBBF24;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.gold-link:hover {
+  text-decoration: underline;
+}
+
 .footer-section {
-  font-size: 0.875rem;
-  color: #A1A1AA;
+  text-align: center;
+  margin-top: 24px;
+  font-size: 14px;
+  color: #888888;
+}
+
+/* MENSAGENS DE STATUS (SUCESSO / ERRO DO BACKEND) */
+.status-alert {
+  padding: 12px;
+  margin-bottom: 16px;
+  border-radius: 6px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.status-alert.error {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+.status-alert.success {
+  background-color: rgba(34, 197, 94, 0.1);
+  color: #22c55e;
+  border: 1px solid rgba(34, 197, 94, 0.4);
 }
