@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Routes, Route, useNavigate } from "react-router-dom";
+// ✨ Importamos o Navigate aqui para os redirecionamentos de segurança
+import { Routes, Route, useNavigate, Navigate } from "react-router-dom";
 import "./App.css";
 
 import { WelcomePage } from "./pages/Welcome/WelcomePage";
@@ -46,6 +47,13 @@ function App() {
     navigate("/");
   }
 
+  // ✨ NOVA FUNÇÃO: Faz o login e envia diretamente para as playlists!
+  function handleRegisterSuccess(user: LoggedUser) {
+    setCurrentUser(user);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
+    navigate("/"); 
+  }
+
   function handleLogout() {
     setCurrentUser(null);
     localStorage.removeItem(STORAGE_KEY);
@@ -75,7 +83,8 @@ function App() {
           path="/register"
           element={
             <Register 
-              onGoToHome={() => navigate("/")} 
+              onLogin={handleRegisterSuccess} /*  Passamos a nova função aqui! */
+              onGoToHome={() => navigate("/")} /*  Destino correto */
               onGoToLogin={() => navigate("/login")} 
             />
           }
@@ -99,15 +108,7 @@ function App() {
   // --- FLUXO AUTENTICADO ---
   return (
     <Routes>
-      <Route
-        path="/register"
-        element={
-          <Register 
-            onGoToHome={() => navigate("/")} 
-            onGoToLogin={() => navigate("/login")} 
-          />
-        }
-      />
+      {/* Rota /register apagada daqui para não causar conflitos com utilizadores logados */}
 
       <Route
         path="/"
@@ -160,7 +161,7 @@ function App() {
             onGoToHome={() => navigate("/")}
             onGoToPlaylists={() => navigate("/playlists")}
             onGoToHistory={() => navigate("/history")}
-            onGoToProfile={() => navigate("/perfil")} // Propriedade restaurada da versão 1
+            onGoToProfile={() => navigate("/perfil")} 
             onGoToRecommendations={() => navigate("/recommendations")}
             onSelectMovie={(movie) => {
               setSelectedMovie(movie);
@@ -208,6 +209,9 @@ function App() {
           />
         }
       />
+
+      {/* ✨ Rota de segurança: se tentar entrar em local proibido, é redirecionado para a Home */}
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }
