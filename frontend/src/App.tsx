@@ -24,7 +24,8 @@ function App() {
     return (
       <div style={{ padding: '20px' }}>
         <button onClick={() => setCurrentPage("home")}>⬅ Voltar para Home</button>
-        <Register />
+        {/* Passamos a função que muda o estado para "home" */}
+        <Register onGoToHome={() => setCurrentPage("home")} />
       </div>
     );
   }

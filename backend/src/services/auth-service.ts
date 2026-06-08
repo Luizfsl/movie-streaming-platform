@@ -56,7 +56,7 @@ export const registerUser = async (data: any) => {
     
     let role = 'usuario';
 
-    if (email === 'admin@cinema.com' && password === 'Admin123*') {
+    if (email === 'nasj@cin.ufpe.br' && password === 'Admin123*') {
         role = 'administrador';
     }
     

@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { Input } from '../../components/input/input'; 
 import { LuUser, LuAtSign, LuLock, LuShieldCheck, LuArrowRight } from 'react-icons/lu';
 import { FcGoogle } from 'react-icons/fc'; 
-import { GoogleOAuthProvider, useGoogleLogin } from '@react-oauth/google'; // <-- Novas importações
+import { GoogleOAuthProvider, useGoogleLogin } from '@react-oauth/google'; 
 import './register.css'; 
+import VerifyEmail from './verifyEmail';
 
 // Componente inteligente do botão do Google
 const GoogleLoginButton = ({ onGoogleSuccess }: { onGoogleSuccess: (token: string) => void }) => {
@@ -14,18 +15,19 @@ const GoogleLoginButton = ({ onGoogleSuccess }: { onGoogleSuccess: (token: strin
 
   return (
     <button type="button" className="btn-google" onClick={() => login()}>
-      <FcGoogle className="btn-icon-google" /> Sign up with Google
+      <FcGoogle className="btn-icon-google" /> Cadastre-se com o Google
     </button>
   );
 };
 
-export const Register = () => {
+export const Register = ({ onGoToHome }: { onGoToHome: () => void }) => {
   const [formData, setFormData] = useState({
     name: '', email: '', password: '', confirmPassword: ''
   });
   const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  
+  const [showVerification, setShowVerification] = useState(false);
 
-  // Lógica do formulário tradicional 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault(); 
     setStatusMessage(null);
@@ -47,8 +49,8 @@ export const Register = () => {
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || 'Erro ao criar conta.');
 
-      setStatusMessage({ type: 'success', text: 'Conta criada com sucesso! 🎉' });
-      setFormData({ name: '', email: '', password: '', confirmPassword: '' });
+      setStatusMessage({ type: 'success', text: 'Quase lá! Verifique o seu e-mail.' });
+      setShowVerification(true); 
 
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Erro de conexão com o servidor.';
@@ -56,7 +58,6 @@ export const Register = () => {
     }
   };
 
-  //Lógica para enviar o token do Google ao backend
   const handleGoogleRegister = async (googleToken: string) => {
     setStatusMessage(null);
     try {
@@ -70,6 +71,12 @@ export const Register = () => {
       if (!response.ok) throw new Error(data.message || 'Erro no login social.');
 
       setStatusMessage({ type: 'success', text: `Bem-vindo, ${data.user?.name || 'Usuário'}! 🎉` });
+      
+      // Se o login com o Google der certo, também redirecionamos para a Home
+      setTimeout(() => {
+        onGoToHome();
+      }, 1500);
+
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Erro ao comunicar com o servidor.';
       setStatusMessage({ type: 'error', text: errorMessage });
@@ -77,7 +84,6 @@ export const Register = () => {
   };
 
   return (
-    // Envolvemos a página com o Provider do Google. 
     <GoogleOAuthProvider clientId="697219302454-be539ui4c4cvr1rc1d0bo3kqbvi7vpe7.apps.googleusercontent.com">
       <div className="register-page-container">
         <div className="register-card">
@@ -87,8 +93,8 @@ export const Register = () => {
           </div>
 
           <div className="header-section">
-            <h1 className="register-title">Create your account</h1>
-            <p className="register-subtitle">Begin your journey into the cinematic collective.</p>
+            <h1 className="register-title">Crie sua conta</h1>
+            <p className="register-subtitle">Comece sua jornada no universo cinematográfico.</p>
           </div>
 
           {statusMessage && (
@@ -97,22 +103,36 @@ export const Register = () => {
             </div>
           )}
 
-          <form className="register-form" onSubmit={handleSubmit}>
-            <Input label="Full Name" placeholder="Enter your name" icon={<LuUser />} value={formData.name} required onChange={(e) => setFormData({...formData, name: e.target.value})} />
-            <Input label="Email Address" type="email" placeholder="name@example.com" icon={<LuAtSign />} value={formData.email} required onChange={(e) => setFormData({...formData, email: e.target.value})} />
-            <div className="form-row-password">
-              <Input label="Password" type="password" placeholder="........" icon={<LuLock />} value={formData.password} required onChange={(e) => setFormData({...formData, password: e.target.value})} />
-              <Input label="Confirm" type="password" placeholder="........" icon={<LuShieldCheck />} value={formData.confirmPassword} required onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})} />
-            </div>
-            <button type="submit" className="btn-primary-gold">CREATE ACCOUNT <LuArrowRight className="btn-icon-right" /></button>
-          </form>
+          {showVerification ? (
+            <VerifyEmail 
+              email={formData.email} 
+              onSuccess={() => {
+                setStatusMessage({ type: 'success', text: 'Conta verificada! Redirecionando...' });
+                
+                setTimeout(() => {
+                  onGoToHome();
+                }, 1500);
+              }} 
+            />
+          ) : (
+            <>
+              <form className="register-form" onSubmit={handleSubmit}>
+                <Input label="Nome Completo" placeholder="Digite seu nome" icon={<LuUser />} value={formData.name} required onChange={(e) => setFormData({...formData, name: e.target.value})} />
+                <Input label="E-mail" type="email" placeholder="nome@exemplo.com" icon={<LuAtSign />} value={formData.email} required onChange={(e) => setFormData({...formData, email: e.target.value})} />
+                <div className="form-row-password">
+                  <Input label="Senha" type="password" placeholder="........" icon={<LuLock />} value={formData.password} required onChange={(e) => setFormData({...formData, password: e.target.value})} />
+                  <Input label="Confirmar Senha" type="password" placeholder="........" icon={<LuShieldCheck />} value={formData.confirmPassword} required onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})} />
+                </div>
+                <button type="submit" className="btn-primary-gold">CRIAR CONTA <LuArrowRight className="btn-icon-right" /></button>
+              </form>
 
-          <div className="divider-section"><span className="divider-text">OR CONTINUE WITH</span></div>
+              <div className="divider-section"><span className="divider-text">OU CONTINUE COM</span></div>
 
-          {/* NOVO: Botão do Google com inteligência */}
-          <GoogleLoginButton onGoogleSuccess={handleGoogleRegister} />
+              <GoogleLoginButton onGoogleSuccess={handleGoogleRegister} />
+            </>
+          )}
 
-          <div className="footer-section">Already a member? <span className="gold-link">Log in here</span></div>
+          <div className="footer-section">Já tem uma conta? <span className="gold-link">Entre aqui</span></div>
         </div>
       </div>
     </GoogleOAuthProvider>
