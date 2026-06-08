@@ -58,6 +58,11 @@ export interface PageMessage {
   text: string;
 }
 
+export interface LoggedUser {
+  id: string;
+  name: string;
+  email?: string;
+}
 export interface RecommendationSection {
   sectionTitle?: string;
   movies: Movie[];

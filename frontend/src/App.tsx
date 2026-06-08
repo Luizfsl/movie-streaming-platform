@@ -1,20 +1,88 @@
 import { useState } from "react";
 import { Routes, Route, useNavigate } from "react-router-dom";
 import "./App.css";
+
+import { WelcomePage } from "./pages/Welcome/WelcomePage";
+import { LoginPage } from "./pages/Login/LoginPage";
 import { HomePage } from "./pages/Home/HomePage";
 import { MinhasPlaylistsPage } from "./pages/MinhasPlaylists/MinhasPlaylistsPage";
-import { HistoryPage } from "./pages/History/HistoryPage"; 
+import { HistoryPage } from "./pages/History/HistoryPage";
 import { MovieDetailsPage } from "./pages/MovieDetails/MovieDetailsPage";
 import { AccountPage } from "./pages/Account/AccountPage";
 import { RecomendadosPage } from "./pages/Recomendados/RecomendadosPage";
-import type { Movie } from "./types";
+
+import type { LoggedUser, Movie } from "./types";
+
+const STORAGE_KEY = "cinema_logged_user";
+
+function getStoredUser(): LoggedUser | null {
+  const storedUser = localStorage.getItem(STORAGE_KEY);
+
+  if (!storedUser) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(storedUser) as LoggedUser;
+  } catch {
+    localStorage.removeItem(STORAGE_KEY);
+    return null;
+  }
+}
 
 function App() {
   const navigate = useNavigate();
+
+  const [currentUser, setCurrentUser] = useState<LoggedUser | null>(
+    getStoredUser,
+  );
+
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
 
-  // Set the currentUserId to "1" to match Carlos (from the seeded database), ensuring full BDD/manual testing compatibility
-  const currentUserId = "1";
+  function handleLogin(user: LoggedUser) {
+    setCurrentUser(user);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
+    navigate("/");
+  }
+
+  function handleLogout() {
+    setCurrentUser(null);
+    localStorage.removeItem(STORAGE_KEY);
+    setSelectedMovie(null);
+    navigate("/");
+  }
+
+  function handleGoToSignup() {
+    alert("Tela de cadastro será integrada pela feature de Cadastro de Usuário.");
+  }
+
+  if (!currentUser) {
+    return (
+      <Routes>
+        <Route
+          path="/login"
+          element={
+            <LoginPage
+              onLogin={handleLogin}
+              onGoToSignup={handleGoToSignup}
+            />
+          }
+        />
+
+        <Route
+          path="*"
+          element={
+            <WelcomePage
+              onGoToLogin={() => navigate("/login")}
+              onGoToSignup={handleGoToSignup}
+            />
+          }
+        />
+      </Routes>
+    );
+  }
+
+  const currentUserId = currentUser.id;
 
   return (
     <Routes>
@@ -35,6 +103,7 @@ function App() {
           />
         }
       />
+
       <Route
         path="/playlists"
         element={
@@ -45,6 +114,7 @@ function App() {
           />
         }
       />
+
       <Route
         path="/history"
         element={
@@ -58,6 +128,7 @@ function App() {
           />
         }
       />
+
       <Route
         path="/recommendations"
         element={
@@ -74,6 +145,7 @@ function App() {
           />
         }
       />
+
       <Route
         path="/movies/:id"
         element={
@@ -85,9 +157,12 @@ function App() {
             />
           ) : (
             <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center gap-4">
-              <p className="text-gray-400 font-semibold text-lg">Filme não selecionado.</p>
-              <button 
-                onClick={() => navigate("/")} 
+              <p className="text-gray-400 font-semibold text-lg">
+                Filme não selecionado.
+              </p>
+
+              <button
+                onClick={() => navigate("/")}
                 className="px-6 py-2 bg-[#FFC107] text-black font-bold rounded-lg hover:bg-yellow-500 transition-colors"
               >
                 Voltar para a Página Principal
@@ -96,6 +171,7 @@ function App() {
           )
         }
       />
+
       <Route
         path="/perfil"
         element={
@@ -104,10 +180,7 @@ function App() {
             onGoToHome={() => navigate("/")}
             onGoToPlaylists={() => navigate("/playlists")}
             onGoToHistory={() => navigate("/history")}
-            onLogout={() => {
-              console.log("Logout executado");
-              navigate("/");
-            }}
+            onLogout={handleLogout}
           />
         }
       />
