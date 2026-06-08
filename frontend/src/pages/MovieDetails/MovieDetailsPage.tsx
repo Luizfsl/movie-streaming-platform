@@ -6,13 +6,13 @@ import "./MovieDetailsPage.css";
 interface MovieDetailsPageProps {
   movie: Movie;
   userId: string;
-  onGoToHome: () => void;
+  onGoBack: () => void;
 }
 
 export function MovieDetailsPage({
   movie,
   userId,
-  onGoToHome,
+  onGoBack,
 }: MovieDetailsPageProps) {
   const [isWatching, setIsWatching] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
@@ -70,7 +70,7 @@ export function MovieDetailsPage({
       return;
     }
 
-    onGoToHome();
+    onGoBack();
   }
 
   const genres =

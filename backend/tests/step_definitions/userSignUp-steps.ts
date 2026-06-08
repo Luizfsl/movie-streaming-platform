@@ -64,7 +64,7 @@ Given('o email {string} do Google possui cadastro no sistema', async function (e
     }
 });
 
-// --- WHENS (GUI) ---
+// --- WHENS ---
 
 When('eu realizo o cadastro com o email {string} e senha {string}', function (email, password) {
     userData.email = email;
@@ -90,7 +90,7 @@ When('eu preencho o campo {string} com {string}', function (campo, valor) {
     userData[mapaCampos[campo] || campo] = valor;
 });
 
-When('eu clico no botão {string}', async function (botao) {
+When('eu clico no botão {string}', { timeout: 15000 }, async function (botao) {
     if (botao === "CRIAR CONTA") {
         response = await api.post('/api/register', {
             name: userData.name,

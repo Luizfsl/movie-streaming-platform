@@ -28,7 +28,7 @@
 
 /* Foco no container inteiro quando clica no input */
 .input-container:focus-within {
-  border-color: #FBBF24; /* Amarelo-ouro ao focar (igual ao logo/botão) */
+  border-color: #FBBF24; /* Amarelo-ouro ao focar  */
 }
 
 /* Área do ícone */
@@ -49,7 +49,8 @@
   border: none; /* Removemos a borda individual */
   padding: 1rem 1rem 1rem 0.75rem; /* Ajustamos o padding esquerdo para dar espaço ao ícone */
   font-size: 1rem;
-  outline: none;
+  outline: none !important;
+  box-shadow: none !important;
 }
 
 .input-element::placeholder {
