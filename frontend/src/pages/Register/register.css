@@ -188,3 +188,64 @@
   color: #22c55e;
   border: 1px solid rgba(34, 197, 94, 0.4);
 }
+
+/* Centraliza o título e textos internos do bloco de verificação */
+.register-card h2, 
+.register-card p {
+  text-align: center;
+}
+
+/* Localize o input de código (geralmente gerado por bibliotecas ou input padrão) */
+.register-card input[type="text"][maxlength="6"],
+.register-card .verification-input, /* Classe genérica caso use biblioteca */
+.register-card input[placeholder="000000"] {
+  background-color: #141414 !important; /* Mesma cor do fundo do cartão */
+  color: #FBBF24 !important;            /* O tom dourado oficial da sua paleta */
+  border: 1px solid #FBBF24 !important; /* Borda dourada como na imagem de referência */
+  border-radius: 6px;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 8px;                  /* Dá o espaçamento elegante entre os números */
+  text-align: center;
+  padding: 10px;
+  width: 100%;
+  max-width: 200px;                     /* Limita o tamanho para não esticar muito */
+  margin: 20px auto;                    /* Centraliza horizontalmente */
+  display: block;
+  outline: none;
+  box-shadow: 0 0 10px rgba(251, 191, 36, 0.1); /* Leve brilho dourado ao redor */
+}
+
+/* Garante o botão "Ativar Conta" com a mesma identidade visual dos inputs */
+.register-card button:disabled {
+  background-color: #333333;
+  color: #666666;
+  cursor: not-allowed;
+}
+
+/* Alveja o título "Verifique o seu E-mail" dentro do bloco de verificação */
+.register-card h2,
+.register-card .verify-title {
+  color: #ffffff !important; /* Branco para dar destaque principal */
+  font-size: 22px;
+  font-weight: 600;
+  margin-top: 20px;
+  margin-bottom: 10px;
+}
+
+/* Alveja os parágrafos de instrução ("Enviámos um código..." e "Por favor, introduza-o...") */
+.register-card p,
+.register-card .verify-subtitle,
+.register-card .verify-instructions {
+  color: #b3b3b3 !important; /* Um cinza-claro elegante, excelente para leitura no escuro */
+  font-size: 14px;
+  line-height: 1.5;
+  margin-bottom: 8px;
+}
+
+/* Se o email do utilizador estiver dentro de uma tag de destaque (como strong ou span) */
+.register-card p strong,
+.register-card p span {
+  color: #FBBF24 !important; /* Destaca o e-mail do usuário em dourado */
+  font-weight: 600;
+}

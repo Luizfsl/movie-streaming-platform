@@ -6,7 +6,6 @@ import { GoogleOAuthProvider, useGoogleLogin } from '@react-oauth/google';
 import './register.css'; 
 import VerifyEmail from './verifyEmail';
 
-// Componente inteligente do botão do Google
 const GoogleLoginButton = ({ onGoogleSuccess }: { onGoogleSuccess: (token: string) => void }) => {
   const login = useGoogleLogin({
     onSuccess: (tokenResponse) => onGoogleSuccess(tokenResponse.access_token),
@@ -20,7 +19,7 @@ const GoogleLoginButton = ({ onGoogleSuccess }: { onGoogleSuccess: (token: strin
   );
 };
 
-export const Register = ({ onGoToHome }: { onGoToHome: () => void }) => {
+export const Register = ({ onGoToHome, onGoToLogin }: { onGoToHome: () => void, onGoToLogin?: () => void }) => {
   const [formData, setFormData] = useState({
     name: '', email: '', password: '', confirmPassword: ''
   });
@@ -32,8 +31,14 @@ export const Register = ({ onGoToHome }: { onGoToHome: () => void }) => {
     e.preventDefault(); 
     setStatusMessage(null);
 
+    // 1. Validações de Frontend baseadas no BDD
     if (formData.password !== formData.confirmPassword) {
       setStatusMessage({ type: 'error', text: 'As senhas não coincidem!' });
+      return;
+    }
+
+    if (formData.password.length < 8) { 
+      setStatusMessage({ type: 'error', text: 'Aviso: tamanho de senha inválida. Use pelo menos 8 caracteres.' });
       return;
     }
 
@@ -47,7 +52,23 @@ export const Register = ({ onGoToHome }: { onGoToHome: () => void }) => {
       });
 
       const data = await response.json();
-      if (!response.ok) throw new Error(data.message || 'Erro ao criar conta.');
+      
+      if (!response.ok) {
+        // 2. Intercepta erros de conta duplicada e traduz para o formato do BDD
+        let errorMessage = data.message || data.error || 'Erro ao criar conta.';
+        const lowerError = errorMessage.toLowerCase();
+        
+        if (lowerError.includes('exists') || lowerError.includes('already') || lowerError.includes('uso') || lowerError.includes('vinculada')) {
+          errorMessage = 'Atenção: Esta conta já está vinculada a um utilizador.';
+          
+          // 3. Redireciona para o login após 2 segundos 
+          if (onGoToLogin) {
+            setTimeout(() => onGoToLogin(), 2000);
+          }
+        }
+
+        throw new Error(errorMessage);
+      }
 
       setStatusMessage({ type: 'success', text: 'Quase lá! Verifique o seu e-mail.' });
       setShowVerification(true); 
@@ -72,7 +93,6 @@ export const Register = ({ onGoToHome }: { onGoToHome: () => void }) => {
 
       setStatusMessage({ type: 'success', text: `Bem-vindo, ${data.user?.name || 'Usuário'}! 🎉` });
       
-      // Se o login com o Google der certo, também redirecionamos para a Home
       setTimeout(() => {
         onGoToHome();
       }, 1500);
@@ -108,7 +128,6 @@ export const Register = ({ onGoToHome }: { onGoToHome: () => void }) => {
               email={formData.email} 
               onSuccess={() => {
                 setStatusMessage({ type: 'success', text: 'Conta verificada! Redirecionando...' });
-                
                 setTimeout(() => {
                   onGoToHome();
                 }, 1500);
@@ -132,7 +151,8 @@ export const Register = ({ onGoToHome }: { onGoToHome: () => void }) => {
             </>
           )}
 
-          <div className="footer-section">Já tem uma conta? <span className="gold-link">Entre aqui</span></div>
+          {/* Note o uso do onGoToLogin no link do rodapé também */}
+          <div className="footer-section">Já tem uma conta? <span className="gold-link" onClick={onGoToLogin} style={{cursor: 'pointer'}}>Entre aqui</span></div>
         </div>
       </div>
     </GoogleOAuthProvider>
