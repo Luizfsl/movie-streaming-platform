@@ -14,6 +14,7 @@ async function main() {
   const salt = await bcrypt.genSalt(10);
   const hashCarlos = await bcrypt.hash("Senha@123", salt);
   const hashMaria = await bcrypt.hash("Maria@123", salt);
+  const hashJulio = await bcrypt.hash("Julio@123", salt);
 
   const usuarioCarlos = await prisma.user.create({
     data: {
@@ -39,6 +40,7 @@ async function main() {
       id: "usuario-julio-id",
       name: "Júlio César",
       email: "julio@teste.com",
+      password: hashJulio,
     }
   });
 

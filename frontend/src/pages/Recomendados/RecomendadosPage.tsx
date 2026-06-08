@@ -13,6 +13,7 @@ interface RecomendadosPageProps {
   onGoToHome: () => void;
   onGoToPlaylists: () => void;
   onGoToHistory: () => void;
+  onGoToProfile: () => void;
   onGoToRecommendations: () => void;
   onSelectMovie: (movie: Movie) => void;
 }
@@ -22,6 +23,7 @@ export function RecomendadosPage({
   onGoToHome,
   onGoToPlaylists,
   onGoToHistory,
+  onGoToProfile,
   onGoToRecommendations,
   onSelectMovie,
 }: RecomendadosPageProps) {
@@ -104,6 +106,7 @@ export function RecomendadosPage({
         onGoToHome={onGoToHome}
         onGoToPlaylists={onGoToPlaylists}
         onGoToHistory={onGoToHistory}
+        onGoToProfile={onGoToProfile}
         onGoToRecommendations={onGoToRecommendations}
         onLogout={() => console.log("Usuário deslogado")}
       />

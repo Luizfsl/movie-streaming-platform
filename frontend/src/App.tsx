@@ -76,7 +76,7 @@ function App() {
           element={
             <Register 
               onGoToHome={() => navigate("/")} 
-              onGoToLogin={() => navigate("/login")} // ✨ Adicionado aqui
+              onGoToLogin={() => navigate("/login")} 
             />
           }
         />
@@ -104,7 +104,7 @@ function App() {
         element={
           <Register 
             onGoToHome={() => navigate("/")} 
-            onGoToLogin={() => navigate("/login")} // ✨ Adicionado aqui também por segurança
+            onGoToLogin={() => navigate("/login")} 
           />
         }
       />
@@ -160,6 +160,7 @@ function App() {
             onGoToHome={() => navigate("/")}
             onGoToPlaylists={() => navigate("/playlists")}
             onGoToHistory={() => navigate("/history")}
+            onGoToProfile={() => navigate("/perfil")} // Propriedade restaurada da versão 1
             onGoToRecommendations={() => navigate("/recommendations")}
             onSelectMovie={(movie) => {
               setSelectedMovie(movie);
