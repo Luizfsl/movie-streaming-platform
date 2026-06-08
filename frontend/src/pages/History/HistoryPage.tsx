@@ -13,6 +13,7 @@ interface HistoryPageProps {
   onGoToPlaylists: () => void;
   onGoToHistory: () => void;
   onGoToProfile?: () => void;
+  onGoToRecommendations: () => void;
 }
 
 interface HistoryItem {
@@ -23,7 +24,7 @@ interface HistoryItem {
   watchedAt: string;
 }
 
-export function HistoryPage({ userId, onGoToHome, onGoToPlaylists, onGoToHistory, onGoToProfile }: HistoryPageProps) {
+export function HistoryPage({ userId, onGoToHome, onGoToPlaylists, onGoToHistory, onGoToProfile, onGoToRecommendations }: HistoryPageProps) {
   const [historyList, setHistoryList] = useState<HistoryItem[]>([
   ]);
   const [isLoading, setIsLoading] = useState(true);
@@ -104,6 +105,7 @@ export function HistoryPage({ userId, onGoToHome, onGoToPlaylists, onGoToHistory
         onLogout={() => console.log("Usuário deslogado do histórico")}
         onGoToHistory={onGoToHistory}
         onGoToProfile={onGoToProfile}
+        onGoToRecommendations={onGoToRecommendations}
       />
 
       <main className="home-content">

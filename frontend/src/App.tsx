@@ -6,6 +6,7 @@ import { MinhasPlaylistsPage } from "./pages/MinhasPlaylists/MinhasPlaylistsPage
 import { HistoryPage } from "./pages/History/HistoryPage"; 
 import { MovieDetailsPage } from "./pages/MovieDetails/MovieDetailsPage";
 import { AccountPage } from "./pages/Account/AccountPage";
+import { RecomendadosPage } from "./pages/Recomendados/RecomendadosPage";
 import type { Movie } from "./types";
 
 function App() {
@@ -25,6 +26,7 @@ function App() {
             onGoToPlaylists={() => navigate("/playlists")}
             onGoToHome={() => navigate("/")}
             onGoToHistory={() => navigate("/history")}
+            onGoToRecommendations={() => navigate("/recommendations")}
             onSelectMovie={(movie) => {
               setSelectedMovie(movie);
               navigate(`/movies/${movie.id}`);
@@ -39,6 +41,7 @@ function App() {
           <MinhasPlaylistsPage
             userId={currentUserId}
             onGoToHome={() => navigate("/")}
+            onGoToRecommendations={() => navigate("/recommendations")}
           />
         }
       />
@@ -51,6 +54,23 @@ function App() {
             onGoToPlaylists={() => navigate("/playlists")}
             onGoToHistory={() => navigate("/history")}
             onGoToProfile={() => navigate("/perfil")}
+            onGoToRecommendations={() => navigate("/recommendations")}
+          />
+        }
+      />
+      <Route
+        path="/recommendations"
+        element={
+          <RecomendadosPage
+            userId={currentUserId}
+            onGoToHome={() => navigate("/")}
+            onGoToPlaylists={() => navigate("/playlists")}
+            onGoToHistory={() => navigate("/history")}
+            onGoToRecommendations={() => navigate("/recommendations")}
+            onSelectMovie={(movie) => {
+              setSelectedMovie(movie);
+              navigate(`/movies/${movie.id}`);
+            }}
           />
         }
       />
@@ -61,7 +81,7 @@ function App() {
             <MovieDetailsPage
               movie={selectedMovie}
               userId={currentUserId}
-              onGoToHome={() => navigate("/")}
+              onGoBack={() => navigate(-1)}
             />
           ) : (
             <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center gap-4">

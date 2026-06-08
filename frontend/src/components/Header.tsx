@@ -1,15 +1,16 @@
 import cinemaLogo from "../assets/cinema_logo.png"; // Ajuste o caminho se necessário
 
 interface HeaderProps {
-  activePage: "home" | "playlists" | "perfil" | string;
+  activePage: "home" | "playlists" | "perfil" | "history" | "recommendations" | string;
   onGoToHome?: () => void;
   onGoToPlaylists?: () => void;
   onLogout?: () => void;
   onGoToHistory?: () => void;
   onGoToProfile?: () => void;
+  onGoToRecommendations?: () => void;
 }
 
-export function Header({ activePage, onGoToHome, onGoToPlaylists, onLogout, onGoToHistory, onGoToProfile}: HeaderProps) {
+export function Header({ activePage, onGoToHome, onGoToPlaylists, onLogout, onGoToHistory, onGoToProfile, onGoToRecommendations }: HeaderProps) {
   return (
     <header className="home-header">
       <img 
@@ -36,6 +37,14 @@ export function Header({ activePage, onGoToHome, onGoToPlaylists, onLogout, onGo
             onClick={onGoToPlaylists}
           >
             Minhas Playlists
+          </button>
+
+          <button
+            className={`home-nav-button ${activePage === "recommendations" ? "active" : ""}`} 
+            type="button"
+            onClick={onGoToRecommendations}
+          >
+            Recomendados
           </button>
         </nav>
 
