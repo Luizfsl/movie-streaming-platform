@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { MovieCard } from "../../components/MovieCard";
-import { Header } from "../../components/Header"; // Certifique-se de criar este componente em src/components/Header.tsx
+import { Header } from "../../components/Header"; 
+import { KeepWatchingCard } from "../../components/KeepWatchingCard"; // Certifique-se de que o card está importado
 import { getMovies } from "../../services/movieApi";
+import { getUnfinishedMoviesByUserId } from "../../services/historyApi";
 import {
   addMovieToPlaylist,
   getPlaylistsByUserId,
@@ -15,12 +17,20 @@ interface HomePageProps {
   onGoToHome?: () => void;
   onGoToHistory: () => void;
   onSelectMovie: (movie: Movie) => void;
+  onGoToProfile?: () => void;
 }
 
-export function HomePage({ userId, onGoToPlaylists, onGoToHome, onGoToHistory, onSelectMovie }: HomePageProps) {
+export function HomePage({ userId, onGoToPlaylists, onGoToHome, onGoToHistory, onSelectMovie, onGoToProfile }: HomePageProps) {
   const [movies, setMovies] = useState<Movie[]>([]);
   const [loadingMovies, setLoadingMovies] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [keepWatchingMovies, setKeepWatchingMovies] = useState<{
+    movieId: string;
+    title: string;
+    image?: string | null;
+    progress_percentage: number;
+  }[]>([]);
+  const [isLoadingKeepWatching, setIsLoadingKeepWatching] = useState(false);
 
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
   const [availablePlaylists, setAvailablePlaylists] = useState<Playlist[]>([]);
@@ -50,6 +60,38 @@ export function HomePage({ userId, onGoToPlaylists, onGoToHome, onGoToHistory, o
     loadMovies();
   }, []);
 
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadKeepWatchingMovies() {
+      try {
+        setIsLoadingKeepWatching(true);
+
+        const data = await getUnfinishedMoviesByUserId(userId);
+
+        if (isMounted) {
+          setKeepWatchingMovies(data);
+        }
+      } catch (err) {
+        console.warn("Erro ao carregar filmes em andamento", err);
+
+        if (isMounted) {
+          setKeepWatchingMovies([]);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoadingKeepWatching(false);
+        }
+      }
+    }
+
+    loadKeepWatchingMovies();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [userId]);
+
   async function openAddMovieToPlaylistModal(movie: Movie) {
     try {
       setSelectedMovie(movie);
@@ -73,8 +115,8 @@ export function HomePage({ userId, onGoToPlaylists, onGoToHome, onGoToHistory, o
         type: "error",
         text:
           err instanceof Error
-            ? err.message
-            : "Erro inesperado ao buscar playlists disponíveis",
+          ? err.message
+          : "Erro inesperado ao buscar playlists disponíveis",
       });
     } finally {
       setIsLoadingPlaylists(false);
@@ -119,7 +161,6 @@ export function HomePage({ userId, onGoToPlaylists, onGoToHome, onGoToHistory, o
 
   return (
     <div className="home-page">
-      {/* HEADER COMPONENTIZADO RECEBENDO AS AÇÕES DA PÁGINA */}
       <Header 
         activePage="home" 
         onGoToHome={onGoToHome}
@@ -128,6 +169,7 @@ export function HomePage({ userId, onGoToPlaylists, onGoToHome, onGoToHistory, o
           console.log("Usuário deslogado");
         }}
         onGoToHistory={onGoToHistory}
+        onGoToProfile={onGoToProfile}
       />
 
       <main className="home-content">
@@ -147,28 +189,64 @@ export function HomePage({ userId, onGoToPlaylists, onGoToHome, onGoToHistory, o
           </p>
         )}
 
-        {loadingMovies && (
-          <p className="catalog-empty-message">Carregando filmes...</p>
-        )}
+        {/* 🚀 SEÇÃO ADICIONADA: CONTINUAR ASSISTINDO (CARROSSEL) */}
+        <section className="keep-watching-section">
+          <div className="section-title-wrapper">
+            <h2>Continuar Assistindo</h2>
+            <div className="section-title-line"></div> {/* Linha que vai até o outro lado */}
+          </div>
 
-        {!loadingMovies && movies.length === 0 && !error && (
-          <p className="catalog-empty-message">
-            Nenhum filme encontrado no catálogo.
-          </p>
-        )}
+          {isLoadingKeepWatching ? (
+            <p className="catalog-empty-message">Carregando filmes em andamento...</p>
+          ) : keepWatchingMovies.length === 0 ? (
+            <p className="catalog-empty-message">Nenhum filme em andamento no momento.</p>
+          ) : (
+            <div className="keep-watching-scrollview">
+              {keepWatchingMovies.map((item) => (
+                <div key={item.movieId} className="keep-watching-scroll-item">
+                  <KeepWatchingCard
+                    title={item.title}
+                    thumbnailUrl={item.image ?? undefined}
+                    progressPercentage={item.progress_percentage}
+                    onClick={() => console.log(`Clicou no filme: ${item.title}`)}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
 
-        <div className="movie-grid">
-          {movies.map((movie) => (
-            <MovieCard
-              key={movie.id}
-              movie={movie}
-              onAddToPlaylist={openAddMovieToPlaylistModal}
-              onSelectMovie={onSelectMovie}
-            />
-          ))}
-        </div>
+        {/* SEÇÃO ORIGINAL DO GRID DE FILMES */}
+        <section className="catalog-section">
+          <div className="section-title-wrapper">
+            <h2>Todos os Filmes</h2>
+            <div className="section-title-line"></div> {/* Linha que vai até o outro lado */}
+          </div>
+
+          {loadingMovies && (
+            <p className="catalog-empty-message">Carregando filmes...</p>
+          )}
+
+          {!loadingMovies && movies.length === 0 && !error && (
+            <p className="catalog-empty-message">
+              Nenhum filme encontrado no catálogo.
+            </p>
+          )}
+
+          <div className="movie-grid">
+            {movies.map((movie) => (
+              <MovieCard
+                key={movie.id}
+                movie={movie}
+                onAddToPlaylist={openAddMovieToPlaylistModal}
+                onSelectMovie={onSelectMovie}
+              />
+            ))}
+          </div>
+        </section>
       </main>
 
+      {/* MODAL DE PLAYLIST */}
       {isPlaylistModalOpen && selectedMovie && (
         <div className="catalog-modal-backdrop">
           <section className="catalog-modal">

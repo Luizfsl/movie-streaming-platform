@@ -1,36 +1,98 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Header } from "../../components/Header";
+import {
+  getHistoryByUserId,
+  hideAllHistory,
+  hideHistoryMovie,
+} from "../../services/historyApi";
 import "./HistoryPage.css";
 
 interface HistoryPageProps {
+  userId: string;
   onGoToHome: () => void;
   onGoToPlaylists: () => void;
   onGoToHistory: () => void;
+  onGoToProfile?: () => void;
 }
 
 interface HistoryItem {
-  id: number;
+  id: string;
+  movieId: string;
   date: string;
   title: string;
+  watchedAt: string;
 }
 
-export function HistoryPage({ onGoToHome, onGoToPlaylists, onGoToHistory }: HistoryPageProps) {
-  // Lista inicial com dados fictícios baseada nos seus componentes de filmes
+export function HistoryPage({ userId, onGoToHome, onGoToPlaylists, onGoToHistory, onGoToProfile }: HistoryPageProps) {
   const [historyList, setHistoryList] = useState<HistoryItem[]>([
-    { id: 1, date: "21/05/2026", title: "O Poderoso Chefão" },
-    { id: 2, date: "02/05/2026", title: "Casablanca" },
-    { id: 3, date: "02/05/2026", title: "Cantando na Chuva" },
-    { id: 4, date: "01/05/2026", title: "Psicose" },
-    { id: 5, date: "26/04/2026", title: "13 Going on 30" },
-    { id: 6, date: "26/04/2026", title: "Twilight" },
   ]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  function handleHideItem(id: number) {
-    setHistoryList(prev => prev.filter(item => item.id !== id));
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadHistory() {
+      setIsLoading(true);
+
+      try {
+        const items = await getHistoryByUserId(userId);
+
+        if (!isMounted) {
+          return;
+        }
+
+        setHistoryList(
+          items.map((item) => {
+            const exactWatchedAt = item.watchedAt ?? item.watched_at ?? "";
+            const watchedDate = exactWatchedAt
+              ? new Date(exactWatchedAt).toLocaleDateString("pt-BR")
+              : "";
+
+            return {
+              id: item.id,
+              movieId: item.movieId,
+              date: watchedDate,
+              title: item.title ?? "Filme sem título",
+              watchedAt: exactWatchedAt,
+            };
+          }),
+        );
+      } catch (error) {
+        console.warn("Erro ao carregar histórico", error);
+
+        if (isMounted) {
+          setHistoryList([]);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    loadHistory();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [userId]);
+
+  async function handleHideItem(itemToHide: HistoryItem) {
+    try {
+      await hideHistoryMovie(userId, itemToHide.movieId, itemToHide.watchedAt);
+      setHistoryList((prev) => prev.filter((item) => item.id !== itemToHide.id));
+    } catch (error) {
+      console.warn("Erro ao ocultar item do histórico", error);
+    }
   }
 
-  function handleHideAll() {
-    setHistoryList([]);
+  async function handleHideAll() {
+    try {
+      await hideAllHistory(userId);
+      setHistoryList([]);
+    } catch (error) {
+      console.warn("Erro ao ocultar histórico", error);
+    }
   }
 
   return (
@@ -41,6 +103,7 @@ export function HistoryPage({ onGoToHome, onGoToPlaylists, onGoToHistory }: Hist
         onGoToPlaylists={onGoToPlaylists}
         onLogout={() => console.log("Usuário deslogado do histórico")}
         onGoToHistory={onGoToHistory}
+        onGoToProfile={onGoToProfile}
       />
 
       <main className="home-content">
@@ -62,7 +125,9 @@ export function HistoryPage({ onGoToHome, onGoToPlaylists, onGoToHistory }: Hist
           )}
         </section>
 
-        {historyList.length > 0 ? (
+        {isLoading ? (
+          <div className="history-empty-box">Carregando histórico...</div>
+        ) : historyList.length > 0 ? (
           /* Lista com scroll caso fique muito grande */
           <div className="history-scroll-container">
             <div className="history-list-dark">
@@ -74,7 +139,7 @@ export function HistoryPage({ onGoToHome, onGoToPlaylists, onGoToHistory }: Hist
                     type="button" 
                     className="btn-hide-item-dark"
                     title="Esconder do histórico"
-                    onClick={() => handleHideItem(item.id)}
+                    onClick={() => handleHideItem(item)}
                   >
                     {/* Ícone de Proibido/Ocultar */}
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">

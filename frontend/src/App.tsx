@@ -1,85 +1,120 @@
 import { useState } from "react";
+import { Routes, Route, useNavigate } from "react-router-dom";
 import "./App.css";
 import { HomePage } from "./pages/Home/HomePage";
 import { MinhasPlaylistsPage } from "./pages/MinhasPlaylists/MinhasPlaylistsPage";
 import { HistoryPage } from "./pages/History/HistoryPage"; 
 import { MovieDetailsPage } from "./pages/MovieDetails/MovieDetailsPage";
-import { Register } from "./pages/Register/register"; // 1. IMPORTAÇÃO ADICIONADA
+import { Register } from "./pages/Register/register";
+import { AccountPage } from "./pages/Account/AccountPage";
 import type { Movie } from "./types";
 
-// 2. ADICIONADO "register" NAS OPÇÕES DE TELA
-type CurrentPage = "home" | "playlists" | "history" | "movie-details" | "register";
-
 function App() {
-  const [currentPage, setCurrentPage] = useState<CurrentPage>("home");
+  const navigate = useNavigate();
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
 
-  const currentUser = {
-    id: "Victoria",
-    name: "Victoria",
-  };
+  // Set the currentUserId to "1" to match Carlos (from the seeded database), ensuring full BDD/manual testing compatibility
+  const currentUserId = "1";
 
-  // Renderização da sua tela de cadastro
-  if (currentPage === "register") {
-    return (
-      <div style={{ padding: '20px' }}>
-        <button onClick={() => setCurrentPage("home")}>⬅ Voltar para Home</button>
-        {/* Passamos a função que muda o estado para "home" */}
-        <Register onGoToHome={() => setCurrentPage("home")} />
-      </div>
-    );
-  }
-
-  if (currentPage === "playlists") {
-    return (
-      <MinhasPlaylistsPage
-        userId={currentUser.id}
-        onGoToHome={() => setCurrentPage("home")}
-      />
-    );
-  }
-
-  if (currentPage === "history") {
-    return (
-      <HistoryPage
-        onGoToHome={() => setCurrentPage("home")}
-        onGoToPlaylists={() => setCurrentPage("playlists")}
-        onGoToHistory={() => setCurrentPage("history")}
-      />
-    );
-  }
-  
-  if (currentPage === "movie-details" && selectedMovie) {
-    return (
-      <MovieDetailsPage
-        movie={selectedMovie}
-        userId={currentUser.id}
-        onGoToHome={() => setCurrentPage("home")}
-      />
-    );
-  }
-
-  // 3. RETORNADO O BOTÃO E ENVOLVIDO TUDO NUMA DIV
   return (
-    <div>
-      <button 
-        onClick={() => setCurrentPage("register")} 
-        style={{ margin: '20px', padding: '10px', background: '#FBBF24', color: 'black', fontWeight: 'bold', cursor: 'pointer', border: 'none', borderRadius: '4px' }}
-      >
-        Ir para Cadastro 👤
-      </button>
-
-      <HomePage
-        userId={currentUser.id}
-        onGoToPlaylists={() => setCurrentPage("playlists")}
-        onGoToHome={() => setCurrentPage("home")}
-        onGoToHistory={() => setCurrentPage("history")}
-        onSelectMovie={(movie) => {
-          setSelectedMovie(movie);
-          setCurrentPage("movie-details");
-        }}
+    <Routes>
+      {/* 1. ROTA DE CADASTRO */}
+      <Route
+        path="/register"
+        element={
+          <Register 
+            onGoToHome={() => navigate("/")} 
+          />
+        }
       />
-    </div>
+
+      {/* 2. ROTA DA HOME */}
+      <Route
+        path="/"
+        element={
+          <div>
+            <button 
+              onClick={() => navigate("/register")} 
+              style={{ margin: '20px', padding: '10px', background: '#FBBF24', color: 'black', fontWeight: 'bold', cursor: 'pointer', border: 'none', borderRadius: '4px', position: 'absolute', zIndex: 50 }}
+            >
+              Ir para Cadastro 👤
+            </button>
+
+            <HomePage
+              userId={currentUserId}
+              onGoToPlaylists={() => navigate("/playlists")}
+              onGoToHome={() => navigate("/")}
+              onGoToHistory={() => navigate("/history")}
+              onSelectMovie={(movie) => {
+                setSelectedMovie(movie);
+                navigate(`/movies/${movie.id}`);
+              }}
+              onGoToProfile={() => navigate("/perfil")}
+            />
+          </div>
+        }
+      />
+
+      {/* 3. RESTANTE DAS ROTAS DA EQUIPA */}
+      <Route
+        path="/playlists"
+        element={
+          <MinhasPlaylistsPage
+            userId={currentUserId}
+            onGoToHome={() => navigate("/")}
+          />
+        }
+      />
+      <Route
+        path="/history"
+        element={
+          <HistoryPage
+            userId={currentUserId}
+            onGoToHome={() => navigate("/")}
+            onGoToPlaylists={() => navigate("/playlists")}
+            onGoToHistory={() => navigate("/history")}
+            onGoToProfile={() => navigate("/perfil")}
+          />
+        }
+      />
+      <Route
+        path="/movies/:id"
+        element={
+          selectedMovie ? (
+            <MovieDetailsPage
+              movie={selectedMovie}
+              userId={currentUserId}
+              onGoToHome={() => navigate("/")}
+            />
+          ) : (
+            <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center gap-4">
+              <p className="text-gray-400 font-semibold text-lg">Filme não selecionado.</p>
+              <button 
+                onClick={() => navigate("/")} 
+                className="px-6 py-2 bg-[#FFC107] text-black font-bold rounded-lg hover:bg-yellow-500 transition-colors"
+              >
+                Voltar para a Página Principal
+              </button>
+            </div>
+          )
+        }
+      />
+      <Route
+        path="/perfil"
+        element={
+          <AccountPage
+            userId={currentUserId}
+            onGoToHome={() => navigate("/")}
+            onGoToPlaylists={() => navigate("/playlists")}
+            onGoToHistory={() => navigate("/history")}
+            onLogout={() => {
+              console.log("Logout executado");
+              navigate("/");
+            }}
+          />
+        }
+      />
+    </Routes>
   );
 }
 
