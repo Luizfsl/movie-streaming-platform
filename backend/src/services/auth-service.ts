@@ -46,39 +46,42 @@ function generateVerificationCode(): string {
 
 export const registerUser = async (data: any) => {
     validateRegistrationData(data);
-
     const { name, email, password } = data;
 
+    // 1. Verifica se o e-mail já pertence a uma conta DEFINITIVA e ATIVA
     const userExists = await userRepository.findUserByEmail(email);
     if (userExists) {
         throw { status: 400, message: "conta já está vinculada" };
     }
+
+    // 2. Se o usuário tentar se cadastrar de novo antes de validar, limpamos o pré-cadastro antigo dele
+    const preRegExists = await userRepository.findPreRegistrationByEmail(email);
+    if (preRegExists) {
+        await userRepository.deletePreRegistration(preRegExists.id);
+    }
     
     let role = 'usuario';
-
     if (email === 'nasj@cin.ufpe.br' && password === 'Admin123*') {
         role = 'administrador';
     }
     
     const hashedPassword = await hashPassword(password);
-
-    // 3. Geramos o código de 6 dígitos
     const verificationCode = generateVerificationCode();
 
-    // 4. Salvamos o usuário no banco, enviando o código gerado
-    const newUser = await userRepository.createUser({
+    // 3. SALVA APENAS NA TABELA TEMPORÁRIA
+    const preUser = await userRepository.createPreRegistration({
         name,
         email,
         password: hashedPassword,
         role: role,
-        verificationCode: verificationCode // <-- Código guardado no Prisma
+        verificationCode: verificationCode
     });
 
-    // 5. Disparamos o e-mail para o usuário!
-    // Usamos await para garantir que o e-mail sai antes de responder ao frontend
+    // 4. Envia o e-mail
     await sendVerificationEmail(email, verificationCode);
 
-    return newUser;
+    // Retornamos uma estrutura similar para não quebrar o seu controller anterior
+    return { id: preUser.id, name: preUser.name, email: preUser.email };
 };
 
 export const authenticateGoogleUser = async (token: string, bodyMockData: any) => {
@@ -146,28 +149,34 @@ export const deleteUserAccount = async (userId: string): Promise<void> => {
 };
 
 export const verifyUserEmail = async (email: string, code: string) => {
-    // 1. Procuramos o utilizador no banco
-    const user = await userRepository.findUserByEmail(email);
+    // 1. Procuramos o registro na tabela TEMPORÁRIA de pré-cadastro
+    const preRegister = await userRepository.findPreRegistrationByEmail(email);
 
-    if (!user) {
-        throw { status: 404, message: "Usuário não encontrado." };
+    if (!preRegister) {
+        // Se não achar na temporária, pode ser que já tenha validado antes
+        const activeUser = await userRepository.findUserByEmail(email);
+        if (activeUser && activeUser.isVerified) {
+            throw { status: 400, message: "Esta conta já está ativada." };
+        }
+        throw { status: 404, message: "Pedido de cadastro expirou ou não foi encontrado." };
     }
 
-    // 2. Verificamos se ele já está validado para evitar duplicidade
-    if (user.isVerified) {
-        throw { status: 400, message: "Esta conta já está ativada." };
-    }
-
-    // 3. Comparamos o código que ele enviou com o do banco
-    if (user.verificationCode !== code) {
+    // 2. Comparamos o código enviado com o código guardado temporariamente
+    if (preRegister.verificationCode !== code) {
         throw { status: 400, message: "Código de verificação inválido." };
     }
 
-    // 4. Se tudo estiver correto, atualizamos o status e limpamos o código
-    await userRepository.updateUser(user.id, {
-        isVerified: true,
-        verificationCode: null // Limpamos para que o código não possa ser reutilizado
+    // 3. O CÓDIGO ESTÁ CERTO! Agora sim criamos o usuário REAL no banco
+    const newUser = await userRepository.createUser({
+        name: preRegister.name,
+        email: preRegister.email,
+        password: preRegister.password, // Passa a senha já encriptada do passo anterior
+        role: preRegister.role,
+        isVerified: true // Já nasce validado!
     });
+
+    // 4. Limpeza: Removemos dos pré-cadastros para liberar espaço e evitar reuso
+    await userRepository.deletePreRegistration(preRegister.id);
 
     return true;
 };

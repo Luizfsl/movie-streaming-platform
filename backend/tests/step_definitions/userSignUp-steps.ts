@@ -91,26 +91,40 @@ When('eu preencho o campo {string} com {string}', function (campo, valor) {
 });
 
 When('eu clico no botão {string}', { timeout: 15000 }, async function (botao) {
-    if (botao === "CRIAR CONTA") {
-        response = await api.post('/api/register', {
-            name: userData.name,
-            email: userData.email,
-            password: userData.password
-        });
-    } else if (botao === "Ativar Conta") {
-        response = await api.post('/api/verify-email', { 
-            email: userData.email,
-            code: userData.verificationCode
-        });
+    try {
+        if (botao === "CRIAR CONTA") {
+            response = await api.post('/api/register', {
+                name: userData.name,
+                email: userData.email,
+                password: userData.password
+            });
+        } else if (botao === "Ativar Conta") {
+            // Se o código por algum motivo ainda estiver vazio, o teste vai berrar logo aqui
+            if (!userData.verificationCode) {
+                throw new Error(" [TESTE FALHOU]: Tentando clicar em Ativar Conta, mas userData.verificationCode está indefinido!");
+            }
+
+            response = await api.post('/api/verify-email', { 
+                email: userData.email,
+                code: userData.verificationCode
+            });
+        }
+    } catch (error: any) {
+        // Guarda a resposta de erro para o passo "Then" conseguir diagnosticar se quebrar
+        response = error.response; 
     }
 });
 
 When('eu preencho o código de 6 dígitos', async function () {
-    const user = await prisma.user.findUnique({ where: { email: userData.email } });
-    assert.ok(user, "Usuário não foi encontrado no banco para pegar o código.");
-    assert.ok(user.verificationCode, "O código de verificação não foi gerado no banco.");
-    
-    userData.verificationCode = user.verificationCode;
+    const preRegistration = await prisma.preRegistration.findUnique({ 
+        where: { email: userData.email } // Usa o email que acabou de preencher
+    });
+
+    if (!preRegistration) {
+        throw new Error("Pré-cadastro não foi encontrado no banco para pegar o código.");
+    }
+
+    userData.verificationCode = preRegistration.verificationCode; 
 });
 
 When('eu realizo o cadastro utilizando minha conta Google com email {string}', async function (email) {
@@ -238,6 +252,73 @@ Given('eu sou um utilizador tentando aceder a uma área restrita', function () {
 Given('que o serviço externo do {string} está temporariamente indisponível', function (provedor) {
     externalServiceStatus = 'offline';
 });
+Given('que eu realizei o pré-registo com o e-mail {string}', async function (email: string) {
+    userData.email = email; 
+    await prisma.preRegistration.deleteMany({ where: { email } });
+    await prisma.user.deleteMany({ where: { email } }); // Garante que não está na base principal
+});
+
+Given('os meus dados estão na tabela temporária com o código {string}', async function (codigo: string) {
+    await prisma.preRegistration.create({
+        data: {
+            name: "Usuário Teste",
+            email: userData.email,
+            password: "hashed_password_mock",
+            role: "usuario",
+            verificationCode: codigo
+        }
+    });
+});
+
+Given('que o tempo limite da tabela temporária expirou e o meu registo foi limpo', async function () {
+    // Apaga da tabela temporária para simular que o cron job ou a lógica de expiração limpou
+    await prisma.preRegistration.deleteMany({ where: { email: userData.email } });
+});
+
+Given('que a minha conta com o e-mail {string} já se encontra na base de dados principal', async function (email: string) {
+    userData.email = email;
+    await prisma.user.deleteMany({ where: { email } });
+    await prisma.user.create({
+        data: {
+            name: "Usuário Ativo",
+            email: userData.email,
+            password: "hashed_password_mock",
+            role: "usuario",
+            isVerified: true
+        }
+    });
+});
+
+Given('o status da minha conta já está marcado como verificado', async function () {
+    const user = await prisma.user.findUnique({ where: { email: userData.email } });
+    assert.ok(user, "Usuário não encontrado.");
+    assert.strictEqual(user.isVerified, true, "O usuário não está verificado.");
+});
+
+Given('que eu iniciei um pré-registo com o e-mail {string}', async function (email: string) {
+    userData.email = email;
+    await prisma.preRegistration.deleteMany({ where: { email } });
+    
+    // Guardamos o ID antigo no userData para podermos comparar depois
+    const preReg = await prisma.preRegistration.create({
+        data: {
+            name: "Usuário Indeciso",
+            email: userData.email,
+            password: "hashed_password_mock",
+            role: "usuario",
+            verificationCode: "000000" // Código abandonado
+        }
+    });
+    userData.oldPreRegistrationId = preReg.id;
+});
+
+Given('eu abandonei o processo antes de inserir o código de verificação', function () {
+    // Passo puramente descritivo para fluidez do cenário
+});
+Given('o tempo limite da tabela temporária expirou e o meu registo foi limpo', async function () {
+    // Apaga da tabela temporária para simular que o cron job ou a lógica de expiração limpou
+    await prisma.preRegistration.deleteMany({ where: { email: userData.email } });
+});
 
 // --- WHENS ---
 
@@ -276,6 +357,34 @@ When('eu tento enviar uma solicitação de login com o token {string} do provedo
     });
 
     externalServiceStatus = 'online';
+});
+
+When('eu envio a solicitação de ativação com o e-mail {string} e o código {string}', async function (email: string, code: string) {
+    try {
+        response = await api.post('/api/verify-email', { email, code });
+    } catch (error: any) {
+        response = error.response;
+    }
+});
+
+When('eu tento registar-me novamente com o mesmo e-mail {string}', async function (email: string) {
+    try {
+        response = await api.post('/api/register', {
+            name: "Usuário Indeciso Retornou",
+            email: email,
+            password: "Password123*"
+        });
+    } catch (error: any) {
+        response = error.response;
+    }
+});
+
+When('eu envio uma nova solicitação de ativação com o e-mail {string} e o código {string}', async function (email: string, code: string) {
+    try {
+        response = await api.post('/api/verify-email', { email, code });
+    } catch (error: any) {
+        response = error.response;
+    }
 });
 
 // --- THENS ---
@@ -344,5 +453,87 @@ Then('o erro apresentado deve indicar que o {string}', function (mensagemEsperad
     assert.ok(
         corpoResposta.includes(mensagemEsperada), 
         `Erro "${mensagemEsperada}" ausente na resposta de segurança.`
+    );
+});
+
+Then('o sistema deve aprovar a verificação com sucesso', function () {
+    assert.strictEqual(
+        response?.status, 
+        200, 
+        `Esperado status 200 de aprovação, mas recebeu ${response?.status}. Erro: ${response?.data?.error || ''}`
+    );
+});
+
+Then('a minha conta deve ser criada na base de dados principal como verificada', async function () {
+    const user = await prisma.user.findUnique({ where: { email: userData.email } });
+    assert.ok(user, `A conta não foi encontrada na base de dados principal para o e-mail: ${userData.email}`);
+    assert.strictEqual(user.isVerified, true, "A conta foi criada, mas a flag isVerified ainda está falsa.");
+});
+
+Then('o registo temporário associado a {string} deve ser apagado', async function (email: string) {
+    const preReg = await prisma.preRegistration.findUnique({ where: { email } });
+    assert.strictEqual(preReg, null, "Alerta de Segurança: O registo temporário ainda existe na base de dados após ativação!");
+});
+
+Then('o sistema deve rejeitar a tentativa de ativação', function () {
+    assert.ok(
+        response?.status === 400 || response?.status === 404, 
+        `A API deveria ter rejeitado a ativação (400 ou 404), mas retornou ${response?.status}`
+    );
+});
+
+Then('a minha conta não deve ser criada na base de dados principal', async function () {
+    const user = await prisma.user.findUnique({ where: { email: userData.email } });
+    assert.strictEqual(user, null, "Erro crítico: a conta foi criada indevidamente na base de dados!");
+});
+
+Then('o sistema deve negar a ativação', function () {
+    assert.strictEqual(response?.status, 404, `Deveria retornar 404 (Não encontrado/Expirado), retornou ${response?.status}`);
+});
+
+Then('o sistema deve apagar o meu pré-registo antigo', async function () {
+    const preReg = await prisma.preRegistration.findUnique({ where: { email: userData.email } });
+    // Verifica se o ID antigo que guardámos no Given já não é o mesmo do atual
+    assert.notStrictEqual(
+        preReg?.id, 
+        userData.oldPreRegistrationId, 
+        "O pré-registo antigo não foi apagado/substituído pelo novo!"
+    );
+});
+
+Then('um novo código de verificação deve ser gerado e enviado para mim', async function () {
+    const preReg = await prisma.preRegistration.findUnique({ where: { email: userData.email } });
+    assert.ok(preReg, "O novo pré-registo não foi encontrado.");
+    assert.notStrictEqual(
+        preReg.verificationCode, 
+        "000000", 
+        "O código gerado é idêntico ao antigo que foi abandonado."
+    );
+    assert.ok(
+        response?.status === 200 || response?.status === 201, 
+        `O registo falhou ao gerar novo código. Status: ${response?.status}`
+    );
+});
+
+Then('eu devo receber a mensagem {string}', function (mensagemEsperada: string) {
+    const corpoResposta = response?.data ? JSON.stringify(response.data) : "";
+    assert.ok(
+        corpoResposta.includes(mensagemEsperada),
+        `Esperava a mensagem "${mensagemEsperada}", mas a API retornou: ${corpoResposta}`
+    );
+});
+
+Then('o erro apresentado deve indicar {string}', function (mensagemEsperada: string) {
+    const corpoResposta = response?.data ? JSON.stringify(response.data) : "";
+    assert.ok(
+        corpoResposta.includes(mensagemEsperada),
+        `Esperava o erro "${mensagemEsperada}", mas a API retornou: ${corpoResposta}`
+    );
+});
+
+Then('o sistema deve bloquear a ação imediatamente', function () {
+    assert.ok(
+        response?.status === 400 || response?.status === 403, 
+        `O sistema deveria ter bloqueado a ação (status 400), mas retornou ${response?.status}`
     );
 });

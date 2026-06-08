@@ -50,6 +50,16 @@ model User {
   verificationCode String?                    // Guarda temporariamente os 6 dígitos
 }
 
+model PreRegistration {
+  id               String   @id @default(uuid())
+  name             String
+  email            String   @unique
+  password         String   // Guardará a senha já encriptada (hashed)
+  role             String   @default("usuario")
+  verificationCode String
+  createdAt        DateTime @default(now()) // Essencial para podermos limpar por tempo depois
+}
+
 model History {
   id        String   @id @default(uuid())
   userId    String
