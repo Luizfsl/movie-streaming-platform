@@ -1,5 +1,10 @@
-import React, { useEffect, useState, useRef } from "react";
-import { getProfile, updateProfile, updatePhoto } from "../../services/accountService";
+import React, { useEffect, useState, useRef, useCallback } from "react";
+import {
+  getProfile,
+  updateProfile,
+  updatePhoto,
+  deleteAccount,
+} from "../../services/accountService";
 import "./AccountPage.css";
 
 const getBase64 = (file: File): Promise<string> => {
@@ -16,7 +21,7 @@ interface AccountPageProps {
   onGoToHome: () => void;
   onGoToPlaylists: () => void;
   onGoToHistory: () => void;
-  onLogout?: () => void;
+  onLogout: () => void;
 }
 
 export function AccountPage({
@@ -71,7 +76,7 @@ export function AccountPage({
     selectedPhotoFile !== null ||
     isPhotoRemoved;
 
-  const loadProfile = async () => {
+  const loadProfile = useCallback(async () => {
     try {
       setIsLoading(true);
       setErrorMessage(null);
@@ -82,16 +87,20 @@ export function AccountPage({
       setOriginalName(profile.name);
       setOriginalEmail(profile.email);
       setPassword("............");
-    } catch (err: any) {
-      setErrorMessage(err.message || "Erro ao carregar dados do perfil.");
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error(String(err));
+      setErrorMessage(error.message || "Erro ao carregar dados do perfil.");
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [userId]);
 
   useEffect(() => {
-    loadProfile();
-  }, [userId]);
+    const load = async () => {
+      await loadProfile();
+    };
+    load();
+  }, [loadProfile]);
 
   // Handle auto-clear timers for notifications (10 seconds)
   useEffect(() => {
@@ -174,7 +183,7 @@ export function AccountPage({
     setSuccessMessage(null);
     setErrorMessage(null);
 
-    const payload: any = {};
+    const payload: Record<string, string> = {};
     let hasFormChanges = false;
 
     if (name !== originalName) {
@@ -197,10 +206,13 @@ export function AccountPage({
           await updateProfile(userId, payload);
           if (payload.name) setOriginalName(payload.name);
           if (payload.email) setOriginalEmail(payload.email);
-        } catch (formError: any) {
-          const errMsg = mapErrorMessage(formError.message || "Erro ao salvar alterações.");
+        } catch (formError) {
+          const error = formError instanceof Error ? formError : new Error(String(formError));
+          const errMsg = mapErrorMessage(error.message || "Erro ao salvar alterações.");
           setErrorMessage(errMsg);
-          throw new Error(errMsg);
+          const thrownError = new Error(errMsg);
+          Object.assign(thrownError, { cause: error });
+          throw thrownError;
         }
       }
 
@@ -211,11 +223,14 @@ export function AccountPage({
           localStorage.removeItem(`profile_avatar_${userId}`);
           setPhotoUrl(null);
           setIsPhotoRemoved(false);
-        } catch (photoError: any) {
+        } catch (photoError) {
           setIsPhotoRemoved(false);
-          const errMsg = mapErrorMessage(photoError.message || "Erro ao salvar alterações.");
+          const error = photoError instanceof Error ? photoError : new Error(String(photoError));
+          const errMsg = mapErrorMessage(error.message || "Erro ao salvar alterações.");
           setErrorMessage(errMsg);
-          throw new Error(errMsg);
+          const thrownError = new Error(errMsg);
+          Object.assign(thrownError, { cause: error });
+          throw thrownError;
         }
       } else if (selectedPhotoFile) {
         try {
@@ -235,16 +250,19 @@ export function AccountPage({
             URL.revokeObjectURL(previewPhotoUrl);
             setPreviewPhotoUrl(null);
           }
-        } catch (photoError: any) {
+        } catch (photoError) {
           setSelectedPhotoFile(null);
           if (previewPhotoUrl) {
             URL.revokeObjectURL(previewPhotoUrl);
             setPreviewPhotoUrl(null);
           }
           
-          const errMsg = mapErrorMessage(photoError.message || "Erro ao salvar alterações.");
+          const error = photoError instanceof Error ? photoError : new Error(String(photoError));
+          const errMsg = mapErrorMessage(error.message || "Erro ao salvar alterações.");
           setErrorMessage(errMsg);
-          throw new Error(errMsg);
+          const thrownError = new Error(errMsg);
+          Object.assign(thrownError, { cause: error });
+          throw thrownError;
         }
       }
 
@@ -267,7 +285,7 @@ export function AccountPage({
       setIsEditingName(false);
       setIsEditingEmail(false);
       setIsEditingPassword(false);
-    } catch (err: any) {
+    } catch {
       // Handled in sub-blocks
     } finally {
       setIsSaving(false);
@@ -324,46 +342,6 @@ export function AccountPage({
     setErrorMessage(null);
   };
 
-  const generateJWT = async (userId: string): Promise<string> => {
-    const header = { alg: "HS256", typ: "JWT" };
-    const payload = { id: userId, exp: Math.floor(Date.now() / 1000) + 3600 };
-    
-    const stringifyAndBase64Url = (obj: any) => {
-      const str = JSON.stringify(obj);
-      const bytes = new TextEncoder().encode(str);
-      const base64 = btoa(String.fromCharCode(...bytes));
-      return base64.replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
-    };
-
-    const headerB64 = stringifyAndBase64Url(header);
-    const payloadB64 = stringifyAndBase64Url(payload);
-    const tokenInput = `${headerB64}.${payloadB64}`;
-
-    // Sign with HMAC SHA-256 and key 'secret'
-    const keyData = new TextEncoder().encode("secret");
-    const key = await window.crypto.subtle.importKey(
-      "raw",
-      keyData,
-      { name: "HMAC", hash: "SHA-256" },
-      false,
-      ["sign"]
-    );
-
-    const signatureBuffer = await window.crypto.subtle.sign(
-      "HMAC",
-      key,
-      new TextEncoder().encode(tokenInput)
-    );
-
-    const signatureArray = new Uint8Array(signatureBuffer);
-    const signatureB64 = btoa(String.fromCharCode(...signatureArray))
-      .replace(/=/g, "")
-      .replace(/\+/g, "-")
-      .replace(/\//g, "_");
-
-    return `${tokenInput}.${signatureB64}`;
-  };
-
   const handleRemoveAccountClick = () => {
     if (hasChanges) {
       setShowUnsavedModal(true);
@@ -377,43 +355,25 @@ export function AccountPage({
     setErrorMessage(null);
     setSuccessMessage(null);
 
-    const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
-
     try {
-      const token = await generateJWT(userId);
-      const res = await fetch(`${API_URL}/users/${userId}`, {
-        method: "DELETE",
-        headers: {
-          "Authorization": `Bearer ${token}`
-        }
-      });
-
-      if (!res.ok) {
-        let msg = "Erro interno do servidor. Tente novamente mais tarde.";
-        if (res.status === 401) {
-          msg = "Sessão expirada.\nFaça login novamente.";
-        } else if (res.status === 404) {
-          msg = "Conta não encontrada.";
-        } else if (res.status === 500) {
-          msg = "Erro interno do servidor.\nTente novamente mais tarde.";
-        }
-        throw new Error(msg);
-      }
+      await deleteAccount(userId);
 
       setSuccessMessage("Conta removida com sucesso.");
       localStorage.removeItem(`profile_avatar_${userId}`);
       setShowDeleteModal(false);
 
-      // Redirect after message display
       setTimeout(() => {
-        onLogout?.();
-      }, 2000);
+        onLogout();
+      }, 1200);
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error(String(err));
+      let msg =
+        error.message || "Erro interno do servidor. Tente novamente mais tarde.";
 
-    } catch (err: any) {
-      let msg = err.message || "Erro interno do servidor.\nTente novamente mais tarde.";
-      if (err.name === "TypeError" && err.message.includes("fetch")) {
+      if (error.name === "TypeError" && error.message.includes("fetch")) {
         msg = "Não foi possível conectar ao servidor.";
       }
+
       setErrorMessage(msg);
       setShowDeleteModal(false);
     } finally {
@@ -455,7 +415,7 @@ export function AccountPage({
     if (hasChanges) {
       setShowUnsavedModal(true);
     } else {
-      onLogout?.();
+      onLogout();
     }
   };
 
