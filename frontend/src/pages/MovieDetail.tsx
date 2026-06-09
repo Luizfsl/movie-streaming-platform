@@ -1,16 +1,42 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { movieService, ApiError } from '../services/movieService';
+import { updateHistoryProgress, getUnfinishedMoviesByUserId } from '../services/historyApi';
 import type { MovieMetadata } from '../types';
 import './MovieDetail.css';
 
-export function MovieDetail() {
+
+interface MovieDetailProps {
+  userId?: string;
+}
+
+function resolveUserId(userId?: string) {
+  if (userId) {
+    return userId;
+  }
+
+  return (
+    localStorage.getItem('userId') ??
+    localStorage.getItem('currentUserId') ??
+    sessionStorage.getItem('userId') ??
+    new URLSearchParams(window.location.search).get('userId') ??
+    ''
+  );
+}
+
+export function MovieDetail({ userId }: MovieDetailProps) {
   const { movieId } = useParams<{ movieId: string }>();
   const navigate = useNavigate();
   const [movie, setMovie] = useState<MovieMetadata | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [playbackPosition, setPlaybackPosition] = useState(0);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const wasPlayingRef = useRef(false);
+  const isSavingProgressRef = useRef(false);
+  const resolvedUserId = resolveUserId(userId);
+  const [startPosition, setStartPosition] = useState(0);
 
   useEffect(() => {
     const fetchMovieDetails = async () => {
@@ -44,8 +70,22 @@ export function MovieDetail() {
     fetchMovieDetails();
   }, [movieId]);
 
+  useEffect(() => {
+    if (resolvedUserId && movieId) {
+      getUnfinishedMoviesByUserId(resolvedUserId)
+        .then((unfinished) => {
+          const historyItem = unfinished.find((item) => item.movieId === movieId);
+          if (historyItem && historyItem.last_position) {
+            setStartPosition(historyItem.last_position); // Salva de onde deve recomeçar
+          }
+        })
+        .catch(console.error);
+    }
+  }, [resolvedUserId, movieId]);
+
   const handlePlayVideo = () => {
     if (!movieId) return;
+    wasPlayingRef.current = true;
     setIsPlaying(true);
   };
 
@@ -60,10 +100,67 @@ export function MovieDetail() {
   };
 
   const handleCloseVideo = () => {
+    if (videoRef.current) {
+      setPlaybackPosition(videoRef.current.currentTime);
+    }
     setIsPlaying(false);
   };
 
-  // 1. ADICIONADO: data-testid="loading-indicator" para o cenário de carregamento
+  useEffect(() => {
+    const shouldPersistProgress = wasPlayingRef.current && !isPlaying;
+
+    if (!shouldPersistProgress) {
+      wasPlayingRef.current = isPlaying;
+      return;
+    }
+
+    wasPlayingRef.current = isPlaying;
+
+    if (!movieId || !resolvedUserId) {
+      return;
+    }
+
+    const currentPosition = Math.floor(
+      videoRef.current?.currentTime ?? playbackPosition,
+    );
+
+    if (currentPosition <= 0) {
+      return;
+    }
+
+    if (isSavingProgressRef.current) {
+      return;
+    }
+
+    isSavingProgressRef.current = true;
+
+    void updateHistoryProgress({
+      id_user: resolvedUserId,
+      id_movie: movieId,
+      last_position: currentPosition,
+    })
+      .catch((err) => {
+        console.warn('Erro ao salvar progresso do vídeo', err);
+      })
+      .finally(() => {
+        isSavingProgressRef.current = false;
+      });
+  }, [isPlaying, movieId, playbackPosition, resolvedUserId]);
+
+  function handleTimeUpdate() {
+    const currentTime = videoRef.current?.currentTime ?? 0;
+
+    if (currentTime > 0) {
+      setPlaybackPosition(Math.floor(currentTime));
+    }
+  }
+
+  function handleVideoEnded() {
+    const currentTime = videoRef.current?.currentTime ?? 0;
+    setPlaybackPosition(Math.floor(currentTime));
+    setIsPlaying(false);
+  }
+
   if (loading) {
     return (
       <div className="movie-detail">
@@ -74,7 +171,6 @@ export function MovieDetail() {
     );
   }
 
-  // 2. ADICIONADO: data-testid="error-message" e data-testid="btn-voltar" na tela de erro/não encontrado
   if (error || !movie) {
     return (
       <div className="movie-detail">
@@ -96,7 +192,6 @@ export function MovieDetail() {
     <div className="movie-detail">
       <title>CInema: Public Domain Streaming</title>
       
-      {/* 3. ADICIONADO: data-testid="btn-voltar" no botão principal de retorno */}
       <button 
         onClick={() => navigate('/')} 
         className="btn-back"
@@ -111,11 +206,21 @@ export function MovieDetail() {
             ✕ Fechar
           </button>
           <video
+            ref={videoRef}
             key={movieId}
             controls
             autoPlay
             className="video-player"
             src={movieId ? movieService.getVideoStreamUrl(movieId) : ''}
+            onTimeUpdate={handleTimeUpdate}
+            onPause={handleTimeUpdate}
+            onEnded={handleVideoEnded}
+            onCanPlay={(e) => {
+              // Só tenta pular se tiver um startPosition e se o vídeo ainda estiver nos primeiros segundos
+              if (startPosition > 0 && e.currentTarget.currentTime < 1) {
+                e.currentTarget.currentTime = startPosition;
+              }
+            }}
           >
             Seu navegador não suporta vídeo HTML5
           </video>
@@ -128,7 +233,6 @@ export function MovieDetail() {
                 <img src={movie.img_url} alt={movie.title} className="movie-poster-detail" />
               )}
               <div className="action-buttons">
-                {/* 4. ADICIONADO: data-testid="btn-assistir" no botão de play */}
                 <button 
                   onClick={handlePlayVideo} 
                   className="btn-play"
@@ -143,23 +247,19 @@ export function MovieDetail() {
             </div>
 
             <div className="movie-details-column">
-              {/* 5. ADICIONADO: data-testid="movie-title" no título principal */}
               <h1 data-testid="movie-title">{movie.title}</h1>
               
               <div className="movie-info">
-                {/* 6. ADICIONADO: data-testid="movie-synopsis" na sinopse */}
                 <div className="info-section">
                   <p data-testid="movie-synopsis">{movie.synopsis || 'Sinopse não disponível'}</p>
                 </div>
 
                 <div className="info-grid">
-                  {/* 7. ADICIONADO: data-testid="movie-genres" */}
                   <div className="info-item">
                     <label>Gêneros</label>
                     <p data-testid="movie-genres">{movie.genres || 'Não informado'}</p>
                   </div>
 
-                  {/* 8. ADICIONADO: data-testid="movie-duration" */}
                   <div className="info-item">
                     <label>Duração</label>
                     <p data-testid="movie-duration">{movie.duration || 'Não informado'}</p>
@@ -170,13 +270,11 @@ export function MovieDetail() {
                     <p data-testid="movie-year">{movie.year || 'Não informado'}</p>
                   </div>
 
-                  {/* 9. ADICIONADO: data-testid="movie-director" */}
                   <div className="info-item">
                     <label>Diretor</label>
                     <p data-testid="movie-director">{movie.director || 'Não informado'}</p>
                   </div>
 
-                  {/* 10. ADICIONADO: data-testid="movie-cast" */}
                   <div className="info-item">
                     <label>Elenco</label>
                     <p data-testid="movie-cast">{movie.cast || 'Não informado'}</p>

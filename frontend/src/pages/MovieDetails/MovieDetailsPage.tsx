@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { Movie } from "../../types";
 import { movieService } from "../../services/movieService";
+import { updateHistoryProgress } from "../../services/historyApi";
 import "./MovieDetailsPage.css";
 
 interface MovieDetailsPageProps {
@@ -18,26 +19,42 @@ export function MovieDetailsPage({
   const [isDownloading, setIsDownloading] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [startPosition, setStartPosition] = useState(movie.resumePosition ?? 0);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const isSavingProgressRef = useRef(false);
+
+  async function savePlaybackProgress(position?: number) {
+    const currentPosition = Math.floor(position ?? videoRef.current?.currentTime ?? 0);
+
+    if (currentPosition <= 0 || isSavingProgressRef.current) {
+      return;
+    }
+
+    isSavingProgressRef.current = true;
+
+    try {
+      await updateHistoryProgress({
+        id_user: userId,
+        id_movie: movie.id,
+        last_position: currentPosition,
+      });
+    } catch (error) {
+      console.warn("Erro ao salvar progresso do filme", error);
+    } finally {
+      isSavingProgressRef.current = false;
+    }
+  }
 
   async function handleWatch() {
     setIsLoading(true);
     setErrorMessage(null);
 
     try {
-      const response = await fetch("http://localhost:3000/history", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          userId,
-          movieId: movie.id,
-        }),
+      await updateHistoryProgress({
+        id_user: userId,
+        id_movie: movie.id,
+        last_position: 0,
       });
-
-      if (!response.ok) {
-        console.warn("Falha ao registrar visualização", response.status);
-      }
 
       setIsWatching(true);
     } catch (error) {
@@ -66,11 +83,26 @@ export function MovieDetailsPage({
 
   function handleBack() {
     if (isWatching) {
+      void savePlaybackProgress();
       setIsWatching(false);
       return;
     }
 
     onGoBack();
+  }
+
+  function handleTimeUpdate() {
+    const currentTime = videoRef.current?.currentTime ?? 0;
+
+    if (currentTime > 0) {
+      setStartPosition(Math.floor(currentTime));
+    }
+  }
+
+  function handleVideoEnded() {
+    const currentTime = videoRef.current?.currentTime ?? 0;
+    void savePlaybackProgress(currentTime);
+    setIsWatching(false);
   }
 
   const genres =
@@ -107,10 +139,19 @@ export function MovieDetailsPage({
       {isWatching ? (
         <div className="details-video-player">
           <video
+            ref={videoRef}
             controls
             autoPlay
             className="details-video"
             src={movieService.getVideoStreamUrl(movie.id)}
+            onTimeUpdate={handleTimeUpdate}
+            onPause={handleTimeUpdate}
+            onEnded={handleVideoEnded}
+            onCanPlay={(event) => {
+              if (startPosition > 0 && event.currentTarget.currentTime < 1) {
+                event.currentTarget.currentTime = startPosition;
+              }
+            }}
             onError={() =>
               setErrorMessage(
                 "Não foi possível carregar o filme. Verifique sua conexão ou tente novamente mais tarde"

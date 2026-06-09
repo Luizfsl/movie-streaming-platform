@@ -32,7 +32,7 @@ export class RecommendationService {
     
     // 2.SÓ ADICIONA A SEÇÃO DE SIMILARES SE O USUÁRIO REALMENTE TIVER HISTÓRICO!
     if (ultimoRegistro) {
-      const similarResult = await this.getSimilarMovies(ultimoRegistro.movieId);
+      const similarResult = await this.getSimilarMovies(ultimoRegistro.movieId,userId);
       // Garante que só joga na tela se o banco realmente achou filmes similares
       if (similarResult && similarResult.movies.length > 0) {
         secoes.push(similarResult);
@@ -59,17 +59,8 @@ export class RecommendationService {
 
   // LÓGICA PARA A ROTA /recommendations/genres/:userId
   async getGenreRecommendations(userId: string) {
-    const dataLimite = this.calcularDataLimite(DIAS_HISTORICO_RECENTE);
 
-    const historicoRecente = await prisma.history.findMany({
-      where: {
-        userId: userId,
-        watchedAt: { gte: dataLimite },
-        is_completed: true,
-        is_hidden: false
-      },
-      include: { movie: true }
-    });
+    const historicoRecente = await this.getRecentHistory(userId);
 
     // Se não tem histórico recente, sugere os lançamentos e populares
     if (historicoRecente.length === 0) {
@@ -113,7 +104,7 @@ export class RecommendationService {
   }
 
   // LÓGICA PARA A ROTA /recommendations/similar/:movieId
-  async getSimilarMovies(movieId: string) {
+  async getSimilarMovies(movieId: string, userId: string) {
     // 1. Busca o filme atual para saber o gênero dele
     const filmeAtual = await prisma.movie.findUnique({
       where: { id: movieId }
@@ -129,14 +120,20 @@ export class RecommendationService {
     };
   }
 
-    // 2. Busca filmes do mesmo gênero, excluindo o filme atual da lista
+    // 2. Busca os IDs dos filmes que este usuário específico já assistiu por completo
+    const historicoRecente = await this.getRecentHistory(userId);
+
+    // Extrai os IDs para um array simples de strings
+    const idsFilmesAssistidos = historicoRecente.map(h => h.movieId);
+
+    // 3. Busca filmes similares excluindo o atual E os que ele já completou
     const filmesSimilares = await prisma.movie.findMany({
       where: {
         genres: filmeAtual.genres,
         id: {
-          not: movieId // "not" diz ao Prisma: traga todos MENOS este ID
+          notIn: [movieId, ...idsFilmesAssistidos] // "notIn" exclui o atual E todos os já vistos
         },
-        isDeleted:{not:true}
+        isDeleted: { not: true }
       },
       take: LIMITE_FILMES
     });
@@ -185,6 +182,22 @@ export class RecommendationService {
     const data = new Date();
     data.setDate(data.getDate() - dias);
     return data;
+  }
+
+  private async getRecentHistory(userId: string) {
+    const dataLimite = this.calcularDataLimite(DIAS_HISTORICO_RECENTE);
+
+    return await prisma.history.findMany({
+      where: {
+        userId: userId,
+        watchedAt: { gte: dataLimite },
+        is_completed: true,
+        is_hidden: false
+      },
+      include: { 
+        movie: true 
+      }
+    });
   }
 
 }

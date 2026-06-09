@@ -1,7 +1,9 @@
 import { Given, When, Then, Before, After } from "@cucumber/cucumber";
 import { Builder, By, WebDriver, until } from "selenium-webdriver";
 import assert from "assert";
+import { PrismaClient } from "../../../backend/src/generated/prisma/index.js";
 
+const prisma = new PrismaClient();
 import chrome from "selenium-webdriver/chrome.js";
 let driver: WebDriver;
 const BASE_URL = "http://localhost:5173"; // Ajuste para a porta onde o seu Vite roda
@@ -45,22 +47,41 @@ Given('eu estou na página {string}', async function (pagina: string) {
 
 // Em testes E2E reais, pré-condições de banco de dados podem ser simuladas chamando APIs de seed
 // Se você não possuir scripts de limpeza automáticos no back, estes passos podem servir como documentação
-Given('o email {string} não possui cadastro no sistema', async function (email: string) {
-    // Espaço para chamada de API de exclusão de usuário de teste, se necessário
-});
 
 Given('o email {string} do Google não possui cadastro no sistema', async function (email: string) {
     // Espaço para tratamento de banco
 });
 
-Given('o email {string} possui cadastro no sistema', async function (email: string) {
-    // Espaço para requisição de criação prévia via backend, garantindo que o usuário existe
+Given('o email {string} não possui cadastro no sistema', async function (email: string) {
+    // Limpa a tabela temporária
+    await prisma.preRegistration.deleteMany({ where: { email: email } });
+    
+    // Limpa a tabela principal
+    await prisma.user.deleteMany({ where: { email: email } }); 
 });
 
 Given('o email {string} do Google possui cadastro no sistema', async function (email: string) {
     // Espaço para requisição de criação prévia
 });
 
+Given('o email {string} possui cadastro no sistema', async function (email: string) {
+    // 1. Limpa resquícios para garantir um teste limpo
+    await prisma.preRegistration.deleteMany({ where: { email: email } }); 
+    await prisma.user.deleteMany({ where: { email: email } }); 
+    
+    // 2. Cria o usuário simulando que ele já se cadastrou antes
+    // Usamos um hash estático para a senha "123456Ll" para não precisar do bcrypt aqui
+    const hashEstatico = "$2b$10$7R6MFA7ClU7dG6p66L6W9ux9W.hG61K6wG6e66666666666666666"; 
+
+    await prisma.user.create({
+        data: {
+            name: "João Já Cadastrado",
+            email: email,
+            password: hashEstatico,
+            isVerified: true // Colocamos como true pois ele já é um usuário ativo
+        }
+    });
+});
 // --- WHENS (Ações de Interface) ---
 
 When('eu preencho o campo {string} com {string}', async function (campo: string, valor: string) {
@@ -77,7 +98,6 @@ When('eu preencho o campo {string} com {string}', async function (campo: string,
         await elemento.sendKeys(valor);
     } 
     else if (normalizedCampo.includes("senha")) {
-        // 🔥 BUSCA INTELIGENTE: Pega todos os inputs de senha da tela
         const inputsSenha = await driver.wait(until.elementsLocated(By.css('input[type="password"]')), 5000);
         
         if (normalizedCampo.includes("confirmar")) {
@@ -110,14 +130,24 @@ When('eu clico no botão {string}', async function (botao: string) {
 });
 
 When('eu preencho o código de 6 dígitos', async function () {
-    // Localiza o input do código OTP. Adapte o seletor conforme sua tela de verificação
-    const seletorCodigo = By.css('input[maxLength="6"], input[placeholder*="código" i]');
-    const inputCodigo = await driver.wait(until.elementLocated(seletorCodigo), 5000);
-    
-    // Em ambiente de testes local, configure o backend para aceitar um código padrão fixo (ex: '123456')
-    await inputCodigo.sendKeys("123456"); 
-});
+    // 1. Busca os dados temporários na tabela PreRegistration usando o Prisma
+    const preCadastro = await prisma.preRegistration.findFirst({
+        where: { email: "exemplo@test.com" }
+    });
 
+    // Pega o código real gerado pelo sistema
+    const codigoReal = preCadastro?.verificationCode;
+
+    if (!codigoReal) {
+        throw new Error("[ERRO] Nenhum código de verificação foi encontrado na tabela PreRegistration para o e-mail exemplo@test.com");
+    }
+
+    console.log(`\n\x1b[32m[DEBUG OTP] Código encontrado no banco: ${codigoReal}. Digitando no navegador...\x1b[0m\n`);
+
+    // 2. Encontra o input na tela do frontend e digita o código real
+    const inputCodigo = await driver.findElement(By.css('input[type="text"]')); 
+    await inputCodigo.sendKeys(codigoReal);
+});
 When('eu realizo o cadastro utilizando minha conta Google com email {string}', async function (email: string) {
     // Simula o clique no botão de SSO do Google
     const botaoGoogle = await driver.wait(until.elementLocated(By.css('button[class*="google" i], iframe')), 5000);
@@ -132,14 +162,14 @@ When('eu tento realizar o cadastro utilizando minha conta Google com o email {st
 
 // --- THENS (Asserções Visuais) ---
 
-Then('eu devo ver a tela pedindo para verificar o e-mail', async function () {
-    // Dá um tempo de até 6 segundos para a tela carregar os elementos de verificação (como palavras-chave)
+Then('eu devo ver a tela pedindo para verificar o e-mail', { timeout: 10000 }, async function () {
     await driver.wait(async () => {
         const corpoTexto = await driver.findElement(By.tagName("body")).getText();
         const lowerTexto = corpoTexto.toLowerCase();
         return lowerTexto.includes("verifique") || lowerTexto.includes("código") || lowerTexto.includes("ativar");
-    }, 6000, "A tela de verificação de e-mail não apareceu a tempo.");
+    }, 8000, "A tela de verificação de e-mail não apareceu a tempo.");
 });
+
 Then('uma nova conta de usuário deve ser criada para {string}', async function (email: string) {
     // No E2E puro, se não houve erro na tela, a conta foi criada. Asserção indireta de sucesso.
     assert.ok(true);
@@ -168,20 +198,42 @@ Then('eu vejo a mensagem de sucesso {string}', { timeout: 10000 }, function (men
     }, 8000, `Mensagem de sucesso contendo "${mensagem}" não apareceu na tela.`);
 });
 
-Then('eu sou redirecionado para a página Home', { timeout: 10000 }, async function () {
-    await driver.wait(until.urlContains("/home"), 8000);
-    const urlAtual = await driver.getCurrentUrl();
-    assert.ok(urlAtual.includes("/home"), `Não redirecionou para a Home. URL atual: ${urlAtual}`);
+// Adicionamos { timeout: 15000 } como segundo parâmetro
+Then('eu sou redirecionado para a página {string}', { timeout: 15000 }, async function (paginaEsperada: string) {
+    const urlAlvo = paginaEsperada.toLowerCase();
+    
+    try {
+        // Agora o Selenium pode esperar seus 8 segundos em paz
+        await driver.wait(until.urlContains(urlAlvo), 8000);
+    } catch (error) {
+        const textoRealDaTela = await driver.findElement(By.tagName("body")).getText();
+        const urlAtual = await driver.getCurrentUrl();
+
+        console.log(`\n\x1b[31m[DEBUG REDIRECIONAMENTO] O teste esperava ir para: /${urlAlvo}`);
+        console.log(`[DEBUG REDIRECIONAMENTO] Mas o navegador travou na URL: ${urlAtual}`);
+        console.log(`[DEBUG REDIRECIONAMENTO] O que estava escrito na tela nesse momento:\n${textoRealDaTela}\x1b[0m\n`);
+        
+        throw error; 
+    }
 });
 
-Then('aparece uma mensagem de aviso {string}', { timeout: 10000 }, function (aviso: string) {
-    const normalizar = (txt: string) => txt.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "");
+Then('aparece uma mensagem de aviso {string}', { timeout: 10000 }, async function (aviso: string) {
+    const normalizar = (txt: string) => 
+        txt.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "");
+           
     const avisoEsperado = normalizar(aviso);
 
-    return driver.wait(async () => {
-        const bodyText = await driver.findElement(By.tagName("body")).getText();
-        return normalizar(bodyText).includes(avisoEsperado);
-    }, 8000, `O aviso contendo "${aviso}" não apareceu na tela.`);
+    try {
+        await driver.wait(async () => {
+            const bodyText = await driver.findElement(By.tagName("body")).getText();
+            return normalizar(bodyText).includes(avisoEsperado);
+        }, 8000);
+    } catch (error) {
+        const textoRealDaTela = await driver.findElement(By.tagName("body")).getText();
+        console.log(`\n\x1b[31m[DEBUG ERRO] O teste procurou pelo aviso "${aviso}", mas não achou.\x1b[0m`);
+        console.log(`\x1b[31m[DEBUG ERRO] O texto que realmente estava na tela era:\n"${textoRealDaTela}"\n----------------------\x1b[0m`);
+        throw error;
+    }
 });
 
 Then('deve aparecer uma mensagem de aviso {string}', async function (aviso: string) {

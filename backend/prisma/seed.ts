@@ -44,60 +44,71 @@ async function main() {
     }
   });
 
+  const hashExemplo = await bcrypt.hash("123456Ll", salt); // Mesma senha usada no seu .feature
+  
+  const usuarioExemplo = await prisma.user.create({
+    data: {
+      id: "usuario-exemplo-id",
+      name: "João",
+      email: "exemplo@test.com",
+      password: hashExemplo,
+    }
+  });
+
   console.log('🍿 Criando catálogo de filmes ativos e populares...');
   // Filmes de Ação
   const v1 = await prisma.movie.create({
-    data: { title: "Vingadores: Ultimato", genres: "Ação", isPopular: true, isDeleted: false, synopsis: "O confronto final contra Thanos.", duration: "181 min" }
+    data: { title: "Vingadores: Ultimato", genres: "Ação", isPopular: true, isDeleted: false, synopsis: "O confronto final contra Thanos.", duration: "181" }
   });
   const v2 = await prisma.movie.create({
-    data: { title: "Círculo de Fogo", genres: "Ação", isPopular: false, isDeleted: false, synopsis: "Robôs gigantes vs Monstros gigantes.", duration: "131 min" }
+    data: { title: "Círculo de Fogo", genres: "Ação", isPopular: false, isDeleted: false, synopsis: "Robôs gigantes vs Monstros gigantes.", duration: "131" }
   });
   await prisma.movie.create({
-    data: { title: "Matrix", genres: "Ação", isPopular: true, isDeleted: false, synopsis: "A realidade é uma simulação.", duration: "136 min" }
+    data: { title: "Matrix", genres: "Ação", isPopular: true, isDeleted: false, synopsis: "A realidade é uma simulação.", duration: "136" }
   });
 
   // Filmes de Comédia
   const c1 = await prisma.movie.create({
-    data: { title: "Cabras da Peste", genres: "Comédia", isPopular: true, isDeleted: false, synopsis: "Dois policiais do Ceará e de São Paulo resolvem um caso.", duration: "97 min" }
+    data: { title: "Cabras da Peste", genres: "Comédia", isPopular: true, isDeleted: false, synopsis: "Dois policiais do Ceará e de São Paulo resolvem um caso.", duration: "97" }
   });
   await prisma.movie.create({
-    data: { title: "Superbad", genres: "Comédia", isPopular: false, isDeleted: false, synopsis: "Dois amigos tentam comprar bebida para uma festa.", duration: "113 min" }
+    data: { title: "Superbad", genres: "Comédia", isPopular: false, isDeleted: false, synopsis: "Dois amigos tentam comprar bebida para uma festa.", duration: "113" }
   });
 
   // Filmes de Terror
   const t1 = await prisma.movie.create({
-    data: { title: "Invocação do Mal", genres: "Terror", isPopular: false, isDeleted: false, synopsis: "Investigadores paranormais ajudam uma família.", duration: "112 min" }
+    data: { title: "Invocação do Mal", genres: "Terror", isPopular: false, isDeleted: false, synopsis: "Investigadores paranormais ajudam uma família.", duration: "112" }
   });
   const t2 = await prisma.movie.create({
-    data: { title: "O Exorcista", genres: "Terror", isPopular: true, isDeleted: false, synopsis: "Uma jovem é possuída por uma entidade misteriosa.", duration: "122 min" }
+    data: { title: "O Exorcista", genres: "Terror", isPopular: true, isDeleted: false, synopsis: "Uma jovem é possuída por uma entidade misteriosa.", duration: "122" }
   });
   const t3 = await prisma.movie.create({
-    data: { title: "Midsommar", genres: "Terror", isPopular: false, isDeleted: false, synopsis: "Um festival de verão sueco se transforma em pesadelo.", duration: "148 min" }
+    data: { title: "Midsommar", genres: "Terror", isPopular: false, isDeleted: false, synopsis: "Um festival de verão sueco se transforma em pesadelo.", duration: "148" }
   });
 
   // Filme Deletado (Para testar se seu front vai ignorar de verdade!)
   await prisma.movie.create({
-    data: { title: "Filme Fantasma Deletado", genres: "Ação", isPopular: true, isDeleted: true, synopsis: "Este filme nunca deve aparecer.", duration: "120 min" }
+    data: { title: "Filme Fantasma Deletado", genres: "Ação", isPopular: true, isDeleted: true, synopsis: "Este filme nunca deve aparecer.", duration: "120" }
   });
 
   await prisma.movie.create({
-    data: { title: "Hereditário", genres: "Terror", isPopular: true, isDeleted: false, synopsis: "Após a morte da avó, uma família começa a descobrir segredos sombrios sobre seus ancestrais.", duration: "127 min" }
+    data: { title: "Hereditário", genres: "Terror", isPopular: true, isDeleted: false, synopsis: "Após a morte da avó, uma família começa a descobrir segredos sombrios sobre seus ancestrais.", duration: "127" }
   });
 
   await prisma.movie.create({
-    data: { title: "Invocação do Mal 2", genres: "Terror", isPopular: true, isDeleted: false, synopsis: "Os investigadores paranormais Ed e Lorraine Warren viajam para a Inglaterra para ajudar uma mãe solteira.", duration: "134 min" }
+    data: { title: "Invocação do Mal 2", genres: "Terror", isPopular: true, isDeleted: false, synopsis: "Os investigadores paranormais Ed e Lorraine Warren viajam para a Inglaterra para ajudar uma mãe solteira.", duration: "134" }
   });
 
   await prisma.movie.create({
-    data: { title: "Corra!", genres: "Terror", isPopular: true, isDeleted: false, synopsis: "Um jovem fotógrafo descobre um segredo sombrio ao visitar os pais da sua namorada.", duration: "104 min"}
+    data: { title: "Corra!", genres: "Terror", isPopular: true, isDeleted: false, synopsis: "Um jovem fotógrafo descobre um segredo sombrio ao visitar os pais da sua namorada.", duration: "104"}
   });
 
   await prisma.movie.create({
-    data: { title: "A Bruxa", genres: "Terror", isPopular: false, isDeleted: false, synopsis: "Na Nova Inglaterra de 1630, uma família de colonos é dizimada por forças de bruxaria e magia negra.", duration: "92 min" }
+    data: { title: "A Bruxa", genres: "Terror", isPopular: false, isDeleted: false, synopsis: "Na Nova Inglaterra de 1630, uma família de colonos é dizimada por forças de bruxaria e magia negra.", duration: "92" }
   });
 
   await prisma.movie.create({
-    data: { title: "Um Lugar Silencioso", genres: "Terror", isPopular: true, isDeleted: false, synopsis: "Uma família precisa lutar para sobreviver em silêncio absoluto para não ser caçada por criaturas cegas.", duration: "90 min" }
+    data: { title: "Um Lugar Silencioso", genres: "Terror", isPopular: true, isDeleted: false, synopsis: "Uma família precisa lutar para sobreviver em silêncio absoluto para não ser caçada por criaturas cegas.", duration: "90" }
   });
 
   // ─── 📥 NOVAS ADIÇÕES PARA OS TESTES E2E DE METADADOS DO CUCUMBER ─────────────
@@ -110,7 +121,7 @@ async function main() {
       title: "Metropolis",
       synopsis: "Numa cidade futurística...",
       genres: "Drama, Ficção Científica",
-      duration: "153 minutos", // Ajustado para bater com o dataTable do teste
+      duration: "153", // Ajustado para bater com o dataTable do teste
       year: "1927",             // Se o seu banco aceitar string/Int, garanta coerência
       director: "Fritz Lang",
       cast: "Brigitte Helm, Alfred Abel, Gustav Fröhlich",
@@ -157,7 +168,7 @@ async function main() {
       title: "A Noite dos Mortos Vivos",
       synopsis: "Zumbis atacam um grupo de sobreviventes refugiados em uma fazenda.",
       genres: "Terror",
-      duration: "96 min",
+      duration: "96",
       year: "1968",
       director: "George A. Romero",
       cast: "Duane Jones, Judith O'Dea, Karl Hardman",

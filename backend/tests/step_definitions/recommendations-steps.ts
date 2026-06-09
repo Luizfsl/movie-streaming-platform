@@ -31,11 +31,13 @@ Before(async () => {
 });
 
 // --- GIVENS (Contextos) ---
+Given('eu estou na página {string}', function (pagina) {
+    
+});
 
 Given('eu não possuo histórico de visualização', async function () {
     await DBUtils.limparHistorico(currentUserId);
 });
-
 
 Given('eu assisti a {string} filmes do gênero {string} nos últimos {string} dias', async function (qtd, genero, dias) {
     await DBUtils.garantirEAssistirFilmes(currentUserId, qtd, genero);
